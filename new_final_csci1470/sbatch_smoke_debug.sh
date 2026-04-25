@@ -79,8 +79,21 @@ fi
 python3 -m py_compile "${PY_FILES[@]}"
 
 if [[ -f plot_reference_figure8.py ]]; then
-  echo "\n=== PLOT REFERENCE FIGURE-8 ==="
-  MPLCONFIGDIR=/tmp/mpl_cfg python3 plot_reference_figure8.py
+  if python3 - <<'PY'
+import importlib
+importlib.import_module("matplotlib")
+print("matplotlib OK")
+PY
+  then
+    echo "\n=== PLOT REFERENCE FIGURE-8 ==="
+    MPLCONFIGDIR=/tmp/mpl_cfg python3 plot_reference_figure8.py
+    if [[ -f animate_reference_figure8.py ]]; then
+      echo "\n=== ANIMATE REFERENCE FIGURE-8 ==="
+      MPLCONFIGDIR=/tmp/mpl_cfg python3 animate_reference_figure8.py
+    fi
+  else
+    echo "Skipping plot/animation: matplotlib not installed in active environment."
+  fi
 fi
 
 echo "\n=== RUN SMOKE TEST ==="

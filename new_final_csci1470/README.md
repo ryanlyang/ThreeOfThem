@@ -49,6 +49,16 @@ This saves:
 
 `figures/reference_figure8.png`
 
+## Animate Reference Figure-8
+
+```bash
+MPLCONFIGDIR=/tmp/mpl_cfg python3 animate_reference_figure8.py
+```
+
+This saves:
+
+`figures/reference_figure8_animation.gif`
+
 ## Run On SLURM (Debug Smoke Test)
 
 From inside `new_final_csci1470`:
@@ -72,6 +82,34 @@ Optional env activation before `sbatch`:
 export CONDA_ENV_NAME=<your_env>
 # or
 export VENV_PATH=/path/to/venv
+```
+
+## Run On SLURM With Auto-Created Venv (Recommended)
+
+This creates and reuses a dedicated project venv at:
+
+`.venv_csci1470_smoke`
+
+Submit:
+
+```bash
+mkdir -p logs
+sbatch sbatch_smoke_debug_venv.sh
+```
+
+Monitor:
+
+```bash
+squeue -u "$USER"
+tail -f logs/csci1470_smoke_venv_<JOB_ID>.out
+tail -f logs/csci1470_smoke_venv_<JOB_ID>.err
+```
+
+You can also create the same venv manually (login node):
+
+```bash
+bash bootstrap_venv.sh
+source .venv_csci1470_smoke/bin/activate
 ```
 
 ## Notes
