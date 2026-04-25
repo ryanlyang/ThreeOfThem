@@ -52,6 +52,22 @@ EVAL_EVERY="${EVAL_EVERY:-10}"
 EVAL_EPISODES="${EVAL_EPISODES:-20}"
 SEED="${SEED:-7}"
 
+# PPO hyperparameters.
+LR="${LR:-3e-4}"
+GAMMA="${GAMMA:-0.995}"
+GAE_LAMBDA="${GAE_LAMBDA:-0.95}"
+CLIP_COEF="${CLIP_COEF:-0.2}"
+VF_COEF="${VF_COEF:-0.5}"
+ENT_COEF="${ENT_COEF:-0.005}"
+
+# Reward weights.
+W_POS="${W_POS:-1.0}"
+W_VEL="${W_VEL:-0.35}"
+W_FUEL="${W_FUEL:-0.03}"
+W_COLLISION="${W_COLLISION:-60.0}"
+W_SWITCH="${W_SWITCH:-0.15}"
+W_PHASE="${W_PHASE:-0.01}"
+
 python train_ppo_figure8.py \
   --updates "$UPDATES" \
   --num-envs "$NUM_ENVS" \
@@ -61,6 +77,18 @@ python train_ppo_figure8.py \
   --eval-every "$EVAL_EVERY" \
   --eval-episodes "$EVAL_EPISODES" \
   --seed "$SEED" \
+  --lr "$LR" \
+  --gamma "$GAMMA" \
+  --gae-lambda "$GAE_LAMBDA" \
+  --clip-coef "$CLIP_COEF" \
+  --vf-coef "$VF_COEF" \
+  --ent-coef "$ENT_COEF" \
+  --w-pos "$W_POS" \
+  --w-vel "$W_VEL" \
+  --w-fuel "$W_FUEL" \
+  --w-collision "$W_COLLISION" \
+  --w-switch "$W_SWITCH" \
+  --w-phase "$W_PHASE" \
   --device auto \
   --run-name "$RUN_NAME"
 

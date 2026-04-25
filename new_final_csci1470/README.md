@@ -33,6 +33,7 @@ This project implements the setup we discussed, from scratch, in a clean standal
 - `sbatch_train_ppo_long_23h.sh`: long-run PPO training job (`23:00:00` on debug).
 - `sbatch_infer_best_gif_after_train.sh`: dependent inference job that picks fastest convergence and saves GIF.
 - `queue_train_then_infer.sh`: submits both jobs with dependency (`afterok`).
+- `queue_train_then_infer_alt_hparams.sh`: same dependency pipeline with alternate reward/PPO hyperparameters.
 - `run_inference_best_gif.py`: evaluates a few setups and writes the best-convergence rollout GIF.
 
 ## Direction Convention
@@ -194,6 +195,12 @@ Submit full pipeline:
 bash queue_train_then_infer.sh
 ```
 
+Submit alternate-hyperparameter pipeline (for comparison):
+
+```bash
+bash queue_train_then_infer_alt_hparams.sh
+```
+
 What this does:
 
 1. Submits `sbatch_train_ppo_long_23h.sh` (23h debug training).
@@ -211,6 +218,14 @@ Main outputs:
 - Inference summary: `inference_best_gif/inference_summary.json`
 - Setup GIFs: `inference_best_gif/setup_00_seed_<seed>.gif`, ..., `setup_09_seed_<seed>.gif`
 - Best GIF: `inference_best_gif/best_convergence_seed_<seed>.gif`
+
+To compare both runs:
+
+1. Submit baseline pipeline:
+`bash queue_train_then_infer.sh`
+2. Submit alternate pipeline:
+`bash queue_train_then_infer_alt_hparams.sh`
+3. Compare their `metrics.csv`, `checkpoint_best.pt`, and `inference_best_gif/inference_summary.json` under each run directory.
 
 ## Notes
 
