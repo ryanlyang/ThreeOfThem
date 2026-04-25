@@ -39,6 +39,16 @@ This encodes your requested traversal direction convention.
 python3 run_smoke_test.py
 ```
 
+## Plot Reference Figure-8
+
+```bash
+MPLCONFIGDIR=/tmp/mpl_cfg python3 plot_reference_figure8.py
+```
+
+This saves:
+
+`figures/reference_figure8.png`
+
 ## Run On SLURM (Debug Smoke Test)
 
 From inside `new_final_csci1470`:

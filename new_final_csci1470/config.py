@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 
 @dataclass
@@ -36,7 +36,7 @@ class EnvConfig:
     phase_offsets_fraction: tuple[float, float, float] = (0.0, 1.0 / 3.0, 2.0 / 3.0)
 
     phase_search_radius: int = 35
-    expected_phase_stride_override: int | None = None
+    expected_phase_stride_override: Optional[int] = None
 
     backend: Literal["numpy", "amuse"] = "numpy"
     integrator_name: Literal["Hermite", "Ph4", "Huayno", "Symple"] = "Hermite"

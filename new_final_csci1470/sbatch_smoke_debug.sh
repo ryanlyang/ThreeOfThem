@@ -72,7 +72,16 @@ for m in mods:
 PY
 
 echo "\n=== SYNTAX CHECK ==="
-python3 -m py_compile config.py reference_orbit.py simulator.py choreography_env.py run_smoke_test.py
+PY_FILES=(config.py reference_orbit.py simulator.py choreography_env.py run_smoke_test.py)
+if [[ -f plot_reference_figure8.py ]]; then
+  PY_FILES+=(plot_reference_figure8.py)
+fi
+python3 -m py_compile "${PY_FILES[@]}"
+
+if [[ -f plot_reference_figure8.py ]]; then
+  echo "\n=== PLOT REFERENCE FIGURE-8 ==="
+  MPLCONFIGDIR=/tmp/mpl_cfg python3 plot_reference_figure8.py
+fi
 
 echo "\n=== RUN SMOKE TEST ==="
 python3 run_smoke_test.py
