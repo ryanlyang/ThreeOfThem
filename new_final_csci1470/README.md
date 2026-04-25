@@ -39,6 +39,31 @@ This encodes your requested traversal direction convention.
 python3 run_smoke_test.py
 ```
 
+## Run On SLURM (Debug Smoke Test)
+
+From inside `new_final_csci1470`:
+
+```bash
+mkdir -p logs
+sbatch sbatch_smoke_debug.sh
+```
+
+Check status and logs:
+
+```bash
+squeue -u "$USER"
+tail -f logs/csci1470_smoke_debug_<JOB_ID>.out
+tail -f logs/csci1470_smoke_debug_<JOB_ID>.err
+```
+
+Optional env activation before `sbatch`:
+
+```bash
+export CONDA_ENV_NAME=<your_env>
+# or
+export VENV_PATH=/path/to/venv
+```
+
 ## Notes
 
 - This code does not depend on `gym`; API is `reset()` / `step(action)`.
