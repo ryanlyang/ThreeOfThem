@@ -27,6 +27,13 @@ This project implements the setup we discussed, from scratch, in a clean standal
 - `simulator.py`: simulator backends (`NumpyThreeBodySimulator`, `AmuseThreeBodySimulator`).
 - `choreography_env.py`: full phase/permutation matching and reward logic.
 - `run_smoke_test.py`: quick run to verify the environment loop.
+- `train_ppo_figure8.py`: PPO training with randomized starts, checkpointing, and periodic eval.
+- `evaluate_trained_policy.py`: evaluate a saved checkpoint vs optional baselines.
+- `sbatch_train_ppo_venv.sh`: SLURM training entrypoint (auto venv + deps).
+- `sbatch_train_ppo_long_23h.sh`: long-run PPO training job (`23:00:00` on debug).
+- `sbatch_infer_best_gif_after_train.sh`: dependent inference job that picks fastest convergence and saves GIF.
+- `queue_train_then_infer.sh`: submits both jobs with dependency (`afterok`).
+- `run_inference_best_gif.py`: evaluates a few setups and writes the best-convergence rollout GIF.
 
 ## Direction Convention
 
@@ -37,6 +44,50 @@ This encodes your requested traversal direction convention.
 
 ```bash
 python3 run_smoke_test.py
+```
+
+## Train PPO (Local / Login Node)
+
+Create/activate venv and install training dependencies:
+
+```bash
+bash bootstrap_venv.sh
+source .venv_csci1470_smoke/bin/activate
+python -m pip install -r requirements-train.txt
+```
+
+Run training:
+
+```bash
+python train_ppo_figure8.py \
+  --updates 120 \
+  --num-envs 8 \
+  --rollout-steps 128 \
+  --ppo-epochs 8 \
+  --minibatch-size 256 \
+  --eval-every 6 \
+  --eval-episodes 16 \
+  --run-name ppo_figure8
+```
+
+Artifacts are saved under:
+
+`artifacts/<run_name>_<timestamp>/`
+
+Key files:
+
+- `checkpoint_best.pt`
+- `checkpoint_latest.pt`
+- `metrics.csv`
+- `metrics.png`
+
+## Evaluate A Trained Checkpoint
+
+```bash
+python evaluate_trained_policy.py \
+  --checkpoint artifacts/<run_name>/checkpoint_best.pt \
+  --episodes 24 \
+  --compare-baselines
 ```
 
 ## Plot Reference Figure-8
@@ -111,6 +162,55 @@ You can also create the same venv manually (login node):
 bash bootstrap_venv.sh
 source .venv_csci1470_smoke/bin/activate
 ```
+
+## Run PPO Training On SLURM
+
+Submit:
+
+```bash
+mkdir -p logs
+sbatch sbatch_train_ppo_venv.sh
+```
+
+Override default training size at submit time:
+
+```bash
+UPDATES=200 NUM_ENVS=10 ROLLOUT_STEPS=128 PPO_EPOCHS=8 MINIBATCH_SIZE=256 sbatch sbatch_train_ppo_venv.sh
+```
+
+Monitor:
+
+```bash
+squeue -u "$USER"
+tail -f logs/csci1470_train_ppo_<JOB_ID>.out
+tail -f logs/csci1470_train_ppo_<JOB_ID>.err
+```
+
+## Long 23h Train + Dependent Inference (One Command)
+
+Submit full pipeline:
+
+```bash
+bash queue_train_then_infer.sh
+```
+
+What this does:
+
+1. Submits `sbatch_train_ppo_long_23h.sh` (23h debug training).
+2. Submits `sbatch_infer_best_gif_after_train.sh` with `afterok` dependency.
+3. Inference runs on 10 different randomized setups (default), saves one GIF per setup, and also saves the fastest-converging one as a dedicated best GIF.
+
+Pipeline metadata and resolved paths are stored in:
+
+`artifacts/pipelines/<PIPE_TAG>/`
+
+Main outputs:
+
+- Training artifacts: `artifacts/ppo_long_<PIPE_TAG>_<timestamp>/`
+- Best model: `checkpoint_best.pt`
+- Inference summary: `inference_best_gif/inference_summary.json`
+- Setup GIFs: `inference_best_gif/setup_00_seed_<seed>.gif`, ..., `setup_09_seed_<seed>.gif`
+- Best GIF: `inference_best_gif/best_convergence_seed_<seed>.gif`
 
 ## Notes
 
