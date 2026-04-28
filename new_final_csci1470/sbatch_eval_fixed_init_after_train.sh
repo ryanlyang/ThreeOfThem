@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=csci1470_fixedinit_eval
-#SBATCH --partition=tier3
+#SBATCH --partition=debug
 #SBATCH --gres=gpu:1
 #SBATCH --mem=24G
 #SBATCH --time=00:20:00
