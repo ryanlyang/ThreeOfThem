@@ -18,6 +18,7 @@ except Exception as exc:  # pragma: no cover
 
 from choreography_env import Figure8ChoreographyEnv
 from config import EnvConfig, RewardWeights
+from fixed_init_profiles import resolve_fixed_init
 from ppo_agent import ActorCritic, PPOBatch, RunningMeanStd, gaussian_entropy, gaussian_log_prob
 
 
@@ -54,6 +55,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--escape-radius", type=float, default=4.0)
     p.add_argument("--init-min-pair-distance", type=float, default=0.25)
     p.add_argument("--backend", type=str, default="numpy", choices=["numpy", "amuse"])
+    p.add_argument("--fixed-init-profile", type=str, default="none", choices=["none", "weird"])
+    p.add_argument("--fixed-init-positions", type=str, default="")
+    p.add_argument("--fixed-init-velocities", type=str, default="")
 
     # Reward weights.
     p.add_argument("--w-pos", type=float, default=1.0)
@@ -76,6 +80,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def make_env_config(args: argparse.Namespace) -> EnvConfig:
+    fixed_pos, fixed_vel = resolve_fixed_init(
+        profile=args.fixed_init_profile,
+        positions_spec=args.fixed_init_positions,
+        velocities_spec=args.fixed_init_velocities,
+    )
     return EnvConfig(
         backend=args.backend,
         seed=args.seed,
@@ -86,6 +95,8 @@ def make_env_config(args: argparse.Namespace) -> EnvConfig:
         max_action_norm=args.max_action_norm,
         escape_radius=args.escape_radius,
         init_min_pair_distance=args.init_min_pair_distance,
+        fixed_init_positions=fixed_pos,
+        fixed_init_velocities=fixed_vel,
     )
 
 

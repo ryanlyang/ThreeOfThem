@@ -34,6 +34,12 @@ class EnvConfig:
     init_speed_scale: float = 0.35
     init_min_pair_distance: float = 0.25
     init_sample_tries: int = 256
+    fixed_init_positions: Optional[
+        tuple[tuple[float, float], tuple[float, float], tuple[float, float]]
+    ] = None
+    fixed_init_velocities: Optional[
+        tuple[tuple[float, float], tuple[float, float], tuple[float, float]]
+    ] = None
 
     reference_period: float = 6.32591398
     reference_samples: int = 900

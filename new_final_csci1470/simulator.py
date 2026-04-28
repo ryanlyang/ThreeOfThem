@@ -18,6 +18,27 @@ def _min_pair_distance(points: np.ndarray) -> float:
     return float(min_dist)
 
 
+def _resolve_fixed_state(cfg: EnvConfig, n: int, dim: int) -> tuple[np.ndarray, np.ndarray] | None:
+    pos_cfg = cfg.fixed_init_positions
+    vel_cfg = cfg.fixed_init_velocities
+    if pos_cfg is None and vel_cfg is None:
+        return None
+    if (pos_cfg is None) != (vel_cfg is None):
+        raise ValueError("Both fixed_init_positions and fixed_init_velocities must be set together.")
+
+    pos = np.asarray(pos_cfg, dtype=np.float64)
+    vel = np.asarray(vel_cfg, dtype=np.float64)
+    expected = (n, dim)
+    if pos.shape != expected or vel.shape != expected:
+        raise ValueError(
+            f"Fixed init state must have shape {expected}; "
+            f"got positions={pos.shape}, velocities={vel.shape}"
+        )
+    if not np.all(np.isfinite(pos)) or not np.all(np.isfinite(vel)):
+        raise ValueError("Fixed init positions/velocities must be finite.")
+    return pos, vel
+
+
 @dataclass
 class SimulationState:
     positions: np.ndarray  # [3, D]
@@ -71,6 +92,14 @@ class NumpyThreeBodySimulator:
     def reset(self, seed: int | None = None) -> SimulationState:
         if seed is not None:
             self.rng = np.random.default_rng(seed)
+
+        fixed_state = _resolve_fixed_state(self.cfg, self.n, self.dim)
+        if fixed_state is not None:
+            pos, vel = fixed_state
+            self.positions = pos.copy()
+            self.velocities = vel.copy()
+            self.time = 0.0
+            return self.get_state()
 
         # Random positions in an annulus, with minimum pairwise separation.
         self.positions = self._sample_initial_positions()
@@ -266,11 +295,14 @@ class AmuseThreeBodySimulator:
         parts = self.Particles(self.n)
         parts.mass = np.full(self.n, self.cfg.mass_each) | self.units.MSun
 
-        pos = self._sample_initial_positions()
-        vel = self.rng.normal(0.0, self.cfg.init_speed_scale, size=(self.n, self.dim))
-
-        vel -= np.average(vel, axis=0)
-        pos -= np.average(pos, axis=0)
+        fixed_state = _resolve_fixed_state(self.cfg, self.n, self.dim)
+        if fixed_state is None:
+            pos = self._sample_initial_positions()
+            vel = self.rng.normal(0.0, self.cfg.init_speed_scale, size=(self.n, self.dim))
+            vel -= np.average(vel, axis=0)
+            pos -= np.average(pos, axis=0)
+        else:
+            pos, vel = fixed_state
 
         for i in range(self.n):
             parts[i].position = (pos[i, 0], pos[i, 1], 0.0) | self.units.AU
