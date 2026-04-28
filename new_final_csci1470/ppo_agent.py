@@ -73,7 +73,8 @@ class ActorCritic(nn.Module):
 
         self.policy_head = nn.Linear(hidden_size, action_dim)
         self.value_head = nn.Linear(hidden_size, 1)
-        self.log_std = nn.Parameter(torch.full((action_dim,), -0.5))
+        # Lower initial exploration helps avoid early full-thrust saturation.
+        self.log_std = nn.Parameter(torch.full((action_dim,), -1.2))
 
         self._init_weights()
 

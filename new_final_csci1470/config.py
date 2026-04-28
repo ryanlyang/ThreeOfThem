@@ -8,6 +8,7 @@ class RewardWeights:
     velocity_direction: float = 0.35
     fuel: float = 0.03
     collision: float = 60.0
+    escape: float = 2.0
     permutation_switch: float = 0.15
     phase_jump: float = 0.01
     out_of_plane: float = 0.0
@@ -26,10 +27,13 @@ class EnvConfig:
 
     max_action_norm: float = 0.30
     collision_radius: float = 0.06
+    escape_radius: float = 4.0
 
     init_radius_min: float = 0.15
     init_radius_max: float = 1.30
     init_speed_scale: float = 0.35
+    init_min_pair_distance: float = 0.25
+    init_sample_tries: int = 256
 
     reference_period: float = 6.32591398
     reference_samples: int = 900

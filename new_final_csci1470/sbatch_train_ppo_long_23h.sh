@@ -65,8 +65,13 @@ W_POS="${W_POS:-1.0}"
 W_VEL="${W_VEL:-0.35}"
 W_FUEL="${W_FUEL:-0.03}"
 W_COLLISION="${W_COLLISION:-60.0}"
+W_ESCAPE="${W_ESCAPE:-2.0}"
 W_SWITCH="${W_SWITCH:-0.15}"
 W_PHASE="${W_PHASE:-0.01}"
+
+# Env stabilization.
+ESCAPE_RADIUS="${ESCAPE_RADIUS:-4.0}"
+INIT_MIN_PAIR_DISTANCE="${INIT_MIN_PAIR_DISTANCE:-0.25}"
 
 python train_ppo_figure8.py \
   --updates "$UPDATES" \
@@ -87,8 +92,11 @@ python train_ppo_figure8.py \
   --w-vel "$W_VEL" \
   --w-fuel "$W_FUEL" \
   --w-collision "$W_COLLISION" \
+  --w-escape "$W_ESCAPE" \
   --w-switch "$W_SWITCH" \
   --w-phase "$W_PHASE" \
+  --escape-radius "$ESCAPE_RADIUS" \
+  --init-min-pair-distance "$INIT_MIN_PAIR_DISTANCE" \
   --device auto \
   --run-name "$RUN_NAME"
 

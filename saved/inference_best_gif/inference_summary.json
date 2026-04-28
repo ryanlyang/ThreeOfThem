@@ -1,0 +1,248 @@
+{
+  "checkpoint": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/checkpoint_best.pt",
+  "device": "cuda",
+  "num_setups": 10,
+  "setup_seeds": [
+    2103139804,
+    2097446776,
+    2121586239,
+    816464123,
+    367992410,
+    1982656189,
+    225255239,
+    561980201,
+    298028866,
+    685255715
+  ],
+  "policy": "deterministic",
+  "thresholds": {
+    "pos": 0.35,
+    "vel": 0.45
+  },
+  "best_index": 5,
+  "best_seed": 1982656189,
+  "best_rank_tuple": [
+    0,
+    2,
+    0.21005751572790698,
+    5
+  ],
+  "best_gif": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/best_convergence_seed_1982656189.gif",
+  "runs": [
+    {
+      "setup_seed": 2103139804,
+      "steps": 5,
+      "collided": true,
+      "converged_step": null,
+      "min_pos_err": 0.25834200238036326,
+      "min_pos_step": 1,
+      "final_pos_err": 0.4510441962470552,
+      "final_vel_err": 1.2537745249323,
+      "return_sum": -85.71542885600049,
+      "rank_tuple": [
+        1,
+        321,
+        0.25834200238036326,
+        1
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_00_seed_2103139804.gif"
+    },
+    {
+      "setup_seed": 2097446776,
+      "steps": 4,
+      "collided": true,
+      "converged_step": 2,
+      "min_pos_err": 0.3323522360456917,
+      "min_pos_step": 3,
+      "final_pos_err": 0.42090260572325505,
+      "final_vel_err": 0.12714150975773733,
+      "return_sum": -82.97279833955804,
+      "rank_tuple": [
+        0,
+        2,
+        0.3323522360456917,
+        3
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_01_seed_2097446776.gif"
+    },
+    {
+      "setup_seed": 2121586239,
+      "steps": 17,
+      "collided": true,
+      "converged_step": null,
+      "min_pos_err": 0.2822760979358107,
+      "min_pos_step": 10,
+      "final_pos_err": 0.624685214557982,
+      "final_vel_err": 0.308339429783681,
+      "return_sum": -94.14504156789539,
+      "rank_tuple": [
+        1,
+        321,
+        0.2822760979358107,
+        10
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_02_seed_2121586239.gif"
+    },
+    {
+      "setup_seed": 816464123,
+      "steps": 19,
+      "collided": true,
+      "converged_step": null,
+      "min_pos_err": 0.4657914980880918,
+      "min_pos_step": 1,
+      "final_pos_err": 0.6615123939716422,
+      "final_vel_err": 0.22159811393240614,
+      "return_sum": -98.55014596931011,
+      "rank_tuple": [
+        1,
+        321,
+        0.4657914980880918,
+        1
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_03_seed_816464123.gif"
+    },
+    {
+      "setup_seed": 367992410,
+      "steps": 300,
+      "collided": true,
+      "converged_step": 25,
+      "min_pos_err": 0.10197202768282637,
+      "min_pos_step": 36,
+      "final_pos_err": 801.9192917877212,
+      "final_vel_err": 0.877370385499233,
+      "return_sum": -61472.79147393701,
+      "rank_tuple": [
+        0,
+        25,
+        0.10197202768282637,
+        36
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_04_seed_367992410.gif"
+    },
+    {
+      "setup_seed": 1982656189,
+      "steps": 300,
+      "collided": true,
+      "converged_step": 2,
+      "min_pos_err": 0.21005751572790698,
+      "min_pos_step": 5,
+      "final_pos_err": 23788.623686282765,
+      "final_vel_err": 0.6368009076968807,
+      "return_sum": -3122784.9992956948,
+      "rank_tuple": [
+        0,
+        2,
+        0.21005751572790698,
+        5
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_05_seed_1982656189.gif"
+    },
+    {
+      "setup_seed": 225255239,
+      "steps": 300,
+      "collided": true,
+      "converged_step": null,
+      "min_pos_err": 0.46346294601062654,
+      "min_pos_step": 1,
+      "final_pos_err": 45096.343059907056,
+      "final_vel_err": 0.9474609692453817,
+      "return_sum": -6252973.018288788,
+      "rank_tuple": [
+        1,
+        321,
+        0.46346294601062654,
+        1
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_06_seed_225255239.gif"
+    },
+    {
+      "setup_seed": 561980201,
+      "steps": 17,
+      "collided": true,
+      "converged_step": null,
+      "min_pos_err": 0.4579302030151627,
+      "min_pos_step": 7,
+      "final_pos_err": 0.5455021251890126,
+      "final_vel_err": 0.04597703954361051,
+      "return_sum": -95.13843198171563,
+      "rank_tuple": [
+        1,
+        321,
+        0.4579302030151627,
+        7
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_07_seed_561980201.gif"
+    },
+    {
+      "setup_seed": 298028866,
+      "steps": 3,
+      "collided": true,
+      "converged_step": null,
+      "min_pos_err": 0.4739769850563828,
+      "min_pos_step": 1,
+      "final_pos_err": 0.5234210221561735,
+      "final_vel_err": 0.2097148212129688,
+      "return_sum": -82.63985856402567,
+      "rank_tuple": [
+        1,
+        321,
+        0.4739769850563828,
+        1
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_08_seed_298028866.gif"
+    },
+    {
+      "setup_seed": 685255715,
+      "steps": 6,
+      "collided": true,
+      "converged_step": null,
+      "min_pos_err": 0.41722447002340074,
+      "min_pos_step": 3,
+      "final_pos_err": 0.5567743385182123,
+      "final_vel_err": 0.31056648713968743,
+      "return_sum": -85.32959091624788,
+      "rank_tuple": [
+        1,
+        321,
+        0.41722447002340074,
+        3
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/ppo_long_altw_20260425_014429_20260425_014434/inference_best_gif/setup_09_seed_685255715.gif"
+    }
+  ],
+  "env_config": {
+    "num_bodies": 3,
+    "dimensions": 2,
+    "gravitational_constant": 1.0,
+    "mass_each": 1.0,
+    "action_dt": 0.05,
+    "integrator_dt": 0.001,
+    "horizon_steps": 300,
+    "max_action_norm": 0.3,
+    "collision_radius": 0.06,
+    "init_radius_min": 0.15,
+    "init_radius_max": 1.3,
+    "init_speed_scale": 0.35,
+    "reference_period": 6.32591398,
+    "reference_samples": 900,
+    "phase_offsets_fraction": [
+      0.0,
+      0.3333333333333333,
+      0.6666666666666666
+    ],
+    "phase_search_radius": 25,
+    "expected_phase_stride_override": null,
+    "backend": "numpy",
+    "integrator_name": "Hermite",
+    "seed": 17
+  },
+  "reward_weights": {
+    "position": 1.35,
+    "velocity_direction": 0.55,
+    "fuel": 0.015,
+    "collision": 80.0,
+    "permutation_switch": 0.2,
+    "phase_jump": 0.015,
+    "out_of_plane": 0.0
+  }
+}

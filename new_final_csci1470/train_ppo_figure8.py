@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-grad-norm", type=float, default=0.5)
 
     # Stabilization.
-    p.add_argument("--reward-scale", type=float, default=10000.0)
+    p.add_argument("--reward-scale", type=float, default=1000.0)
     p.add_argument("--reward-clip", type=float, default=20.0)
     p.add_argument("--obs-clip", type=float, default=10.0)
 
@@ -51,6 +51,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--integrator-dt", type=float, default=0.001)
     p.add_argument("--phase-search-radius", type=int, default=25)
     p.add_argument("--max-action-norm", type=float, default=0.30)
+    p.add_argument("--escape-radius", type=float, default=4.0)
+    p.add_argument("--init-min-pair-distance", type=float, default=0.25)
     p.add_argument("--backend", type=str, default="numpy", choices=["numpy", "amuse"])
 
     # Reward weights.
@@ -58,6 +60,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--w-vel", type=float, default=0.35)
     p.add_argument("--w-fuel", type=float, default=0.03)
     p.add_argument("--w-collision", type=float, default=60.0)
+    p.add_argument("--w-escape", type=float, default=2.0)
     p.add_argument("--w-switch", type=float, default=0.15)
     p.add_argument("--w-phase", type=float, default=0.01)
 
@@ -81,6 +84,8 @@ def make_env_config(args: argparse.Namespace) -> EnvConfig:
         integrator_dt=args.integrator_dt,
         phase_search_radius=args.phase_search_radius,
         max_action_norm=args.max_action_norm,
+        escape_radius=args.escape_radius,
+        init_min_pair_distance=args.init_min_pair_distance,
     )
 
 
@@ -90,6 +95,7 @@ def make_reward_weights(args: argparse.Namespace) -> RewardWeights:
         velocity_direction=args.w_vel,
         fuel=args.w_fuel,
         collision=args.w_collision,
+        escape=args.w_escape,
         permutation_switch=args.w_switch,
         phase_jump=args.w_phase,
     )
@@ -115,6 +121,8 @@ def evaluate_policy(
     returns = []
     lengths = []
     collisions = []
+    escapes = []
+    failures = []
     final_pos_err = []
     final_vel_err = []
 
@@ -133,6 +141,7 @@ def evaluate_policy(
             obs_t = torch.as_tensor(obs_n, dtype=torch.float32, device=device)
             with torch.no_grad():
                 mean, _, _ = model(obs_t)
+            mean = mean * cfg.max_action_norm
             act = mean.squeeze(0).cpu().numpy().reshape(env.action_shape)
             act = np.clip(act, -cfg.max_action_norm, cfg.max_action_norm)
 
@@ -142,7 +151,11 @@ def evaluate_policy(
 
         returns.append(ep_return)
         lengths.append(ep_len)
-        collisions.append(float(info.get("collided", False)))
+        collided = bool(info.get("collided", False))
+        escaped = bool(info.get("escaped", False))
+        collisions.append(float(collided))
+        escapes.append(float(escaped))
+        failures.append(float(collided or escaped))
         final_pos_err.append(float(info.get("position_error", np.nan)))
         final_vel_err.append(float(info.get("velocity_direction_error", np.nan)))
 
@@ -153,6 +166,8 @@ def evaluate_policy(
         "eval_return_std": float(np.std(returns)),
         "eval_length_mean": float(np.mean(lengths)),
         "eval_collision_rate": float(np.mean(collisions)),
+        "eval_escape_rate": float(np.mean(escapes)),
+        "eval_failure_rate": float(np.mean(failures)),
         "eval_final_pos_err": float(np.nanmean(final_pos_err)),
         "eval_final_vel_err": float(np.nanmean(final_vel_err)),
     }
@@ -246,6 +261,7 @@ def main() -> None:
     finished_lengths: list[int] = []
 
     best_eval = -np.inf
+    best_eval_key: tuple[float, float, float, float] | None = None
     metrics_rows: list[dict[str, Any]] = []
 
     for update in range(1, args.updates + 1):
@@ -264,10 +280,12 @@ def main() -> None:
 
             with torch.no_grad():
                 mean, std, value = model(obs_t)
-                # Scale actor mean to action limit.
+                # Keep policy distribution in physical action units.
                 mean = mean * max_action
+                std = std * max_action
                 dist = torch.distributions.Normal(mean, std)
                 action_t = dist.sample()
+                action_t = torch.clamp(action_t, -max_action, max_action)
                 logp_t = dist.log_prob(action_t).sum(dim=-1)
 
             action_np = action_t.cpu().numpy()
@@ -353,6 +371,7 @@ def main() -> None:
 
                 mean, std, value = model(obs_mb)
                 mean = mean * max_action
+                std = std * max_action
 
                 new_logp = gaussian_log_prob(mean, std, act_mb)
                 ratio = torch.exp(new_logp - old_logp_mb)
@@ -384,6 +403,8 @@ def main() -> None:
             "eval_return_std": np.nan,
             "eval_length_mean": np.nan,
             "eval_collision_rate": np.nan,
+            "eval_escape_rate": np.nan,
+            "eval_failure_rate": np.nan,
             "eval_final_pos_err": np.nan,
             "eval_final_vel_err": np.nan,
         }
@@ -415,6 +436,14 @@ def main() -> None:
 
             if eval_stats["eval_return_mean"] > best_eval:
                 best_eval = eval_stats["eval_return_mean"]
+            eval_key = (
+                float(eval_stats["eval_failure_rate"]),
+                float(eval_stats["eval_final_pos_err"]),
+                float(eval_stats["eval_final_vel_err"]),
+                -float(eval_stats["eval_return_mean"]),
+            )
+            if (best_eval_key is None) or (eval_key < best_eval_key):
+                best_eval_key = eval_key
                 torch.save(ckpt, run_dir / "checkpoint_best.pt")
 
         metrics_rows.append(row)
@@ -431,6 +460,12 @@ def main() -> None:
     maybe_plot_metrics(run_dir / "metrics.png", metrics_rows)
 
     print(f"[done] best_eval_return={best_eval:.3f}")
+    if best_eval_key is not None:
+        print(
+            "[done] best_eval_key="
+            f"(failure={best_eval_key[0]:.3f}, pos={best_eval_key[1]:.6f}, "
+            f"vel={best_eval_key[2]:.6f}, -return={best_eval_key[3]:.3f})"
+        )
     print(f"[done] artifacts at: {run_dir}")
 
 

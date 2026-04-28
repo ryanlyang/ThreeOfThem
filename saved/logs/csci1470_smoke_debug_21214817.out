@@ -1,0 +1,44 @@
+=== SLURM JOB INFO ===
+job_id=21214817
+job_name=csci1470_smoke_debug
+node_list=skl-a-48
+submit_dir=/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470
+start_time=Sat Apr 25 12:58:33 AM EDT 2026
+\n=== PATH SETUP ===
+/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470
+\n=== SYSTEM DIAGNOSTICS ===
+ryreu
+skl-a-48.rc.rit.edu
+Linux skl-a-48.rc.rit.edu 6.6.82-1.el9.x86_64 #1 SMP PREEMPT_DYNAMIC Mon Mar 10 14:55:54 EDT 2025 x86_64 x86_64 x86_64 GNU/Linux
+\n=== GPU DIAGNOSTICS ===
+Sat Apr 25 00:58:33 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.90.07              Driver Version: 550.90.07      CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-PCIE-40GB          On  |   00000000:3B:00.0 Off |                    0 |
+| N/A   32C    P0             32W /  250W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+\n=== PYTHON DIAGNOSTICS ===
+/usr/bin/python3
+Python 3.9.25
+Import check:
+  numpy: OK
+  torch: MISSING (ModuleNotFoundError)
+  amuse: MISSING (ModuleNotFoundError)
+  gym: MISSING (ModuleNotFoundError)
+  gymnasium: MISSING (ModuleNotFoundError)
+\n=== SYNTAX CHECK ===
+\n=== RUN SMOKE TEST ===

@@ -75,6 +75,7 @@ def run_policy(
             with torch.no_grad():
                 mean, std, _ = model(obs_t)
                 mean = mean * cfg.max_action_norm
+                std = std * cfg.max_action_norm
 
                 if policy_mode == "stochastic":
                     dist = torch.distributions.Normal(mean, std)

@@ -70,7 +70,9 @@ python run_inference_best_gif.py \
   --policy deterministic \
   --pos-threshold "${POS_THRESHOLD:-0.35}" \
   --vel-threshold "${VEL_THRESHOLD:-0.45}" \
+  --consecutive-converged "${CONSECUTIVE_CONVERGED:-12}" \
   --seed "${SEED:-1234}" \
+  --axis-pad "${AXIS_PAD:-0.12}" \
   --device auto \
   --outdir "$OUTDIR"
 

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/run_smoke_test.py", line 3, in <module>
+    from choreography_env import Figure8ChoreographyEnv
+  File "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/choreography_env.py", line 9, in <module>
+    from config import EnvConfig, RewardWeights
+  File "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/config.py", line 17, in <module>
+    class EnvConfig:
+  File "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/config.py", line 39, in EnvConfig
+    expected_phase_stride_override: int | None = None
+TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'

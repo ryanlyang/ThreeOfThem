@@ -211,12 +211,16 @@ class Figure8ChoreographyEnv:
         fuel_cost = float(np.mean(action_sq) / (self.cfg.max_action_norm**2 + 1e-12))
 
         collision_cost = 1.0 if collided else 0.0
+        max_radius = float(np.max(np.linalg.norm(state.positions, axis=1)))
+        escaped = bool(max_radius > self.cfg.escape_radius)
+        escape_cost = max(0.0, (max_radius / self.cfg.escape_radius) - 1.0)
 
         reward = -(
             self.w.position * match.position_error
             + self.w.velocity_direction * match.velocity_direction_error
             + self.w.fuel * fuel_cost
             + self.w.collision * collision_cost
+            + self.w.escape * escape_cost
             + self.w.permutation_switch * match.switch_cost
             + self.w.phase_jump * match.phase_jump_cost
         )
@@ -225,7 +229,7 @@ class Figure8ChoreographyEnv:
         self._prev_assignment = match.assignment
         self._last_match = match
 
-        terminated = collided or (self.steps >= self.cfg.horizon_steps)
+        terminated = collided or escaped or (self.steps >= self.cfg.horizon_steps)
 
         obs = self._observation_from_state(state, phase_idx=match.phase_idx)
         info = {
@@ -237,7 +241,10 @@ class Figure8ChoreographyEnv:
             "phase_jump_cost": match.phase_jump_cost,
             "fuel_cost": fuel_cost,
             "collision_cost": collision_cost,
+            "escape_cost": escape_cost,
             "collided": collided,
+            "escaped": escaped,
+            "max_radius": max_radius,
             "min_pair_distance": sim_info.get("min_pair_distance", np.nan),
             "energy": sim_info.get("energy", np.nan),
             "sim_time": state.time,

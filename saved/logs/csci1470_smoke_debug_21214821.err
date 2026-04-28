@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/plot_reference_figure8.py", line 5, in <module>
+    import matplotlib.pyplot as plt
+ModuleNotFoundError: No module named 'matplotlib'

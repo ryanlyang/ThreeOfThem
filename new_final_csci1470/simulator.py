@@ -8,6 +8,16 @@ import numpy as np
 from config import EnvConfig
 
 
+def _min_pair_distance(points: np.ndarray) -> float:
+    n = points.shape[0]
+    min_dist = np.inf
+    for i in range(n):
+        for j in range(i + 1, n):
+            d = float(np.linalg.norm(points[i] - points[j]))
+            min_dist = min(min_dist, d)
+    return float(min_dist)
+
+
 @dataclass
 class SimulationState:
     positions: np.ndarray  # [3, D]
@@ -37,15 +47,33 @@ class NumpyThreeBodySimulator:
         self.velocities = np.zeros((self.n, self.dim), dtype=np.float64)
         self.time = 0.0
 
+    def _sample_initial_positions(self) -> np.ndarray:
+        best_pos: np.ndarray | None = None
+        best_min_dist = -np.inf
+        tries = max(1, int(self.cfg.init_sample_tries))
+
+        for _ in range(tries):
+            radii = self.rng.uniform(self.cfg.init_radius_min, self.cfg.init_radius_max, size=(self.n, 1))
+            angles = self.rng.uniform(0.0, 2.0 * np.pi, size=(self.n, 1))
+            pos = np.concatenate((radii * np.cos(angles), radii * np.sin(angles)), axis=1)
+
+            min_dist = _min_pair_distance(pos)
+            if min_dist > best_min_dist:
+                best_min_dist = min_dist
+                best_pos = pos
+
+            if min_dist >= self.cfg.init_min_pair_distance:
+                return pos
+
+        assert best_pos is not None
+        return best_pos
+
     def reset(self, seed: int | None = None) -> SimulationState:
         if seed is not None:
             self.rng = np.random.default_rng(seed)
 
-        # Random positions in an annulus.
-        radii = self.rng.uniform(self.cfg.init_radius_min, self.cfg.init_radius_max, size=(self.n, 1))
-        angles = self.rng.uniform(0.0, 2.0 * np.pi, size=(self.n, 1))
-
-        self.positions = np.concatenate((radii * np.cos(angles), radii * np.sin(angles)), axis=1)
+        # Random positions in an annulus, with minimum pairwise separation.
+        self.positions = self._sample_initial_positions()
 
         # Random initial velocity with near-zero center-of-mass momentum.
         self.velocities = self.rng.normal(0.0, self.cfg.init_speed_scale, size=(self.n, self.dim))
@@ -204,6 +232,27 @@ class AmuseThreeBodySimulator:
         integ.initialize_code()
         return integ
 
+    def _sample_initial_positions(self) -> np.ndarray:
+        best_pos: np.ndarray | None = None
+        best_min_dist = -np.inf
+        tries = max(1, int(self.cfg.init_sample_tries))
+
+        for _ in range(tries):
+            radii = self.rng.uniform(self.cfg.init_radius_min, self.cfg.init_radius_max, size=(self.n, 1))
+            angles = self.rng.uniform(0.0, 2.0 * np.pi, size=(self.n, 1))
+            pos = np.concatenate((radii * np.cos(angles), radii * np.sin(angles)), axis=1)
+
+            min_dist = _min_pair_distance(pos)
+            if min_dist > best_min_dist:
+                best_min_dist = min_dist
+                best_pos = pos
+
+            if min_dist >= self.cfg.init_min_pair_distance:
+                return pos
+
+        assert best_pos is not None
+        return best_pos
+
     def reset(self, seed: int | None = None) -> SimulationState:
         if seed is not None:
             self.rng = np.random.default_rng(seed)
@@ -217,9 +266,7 @@ class AmuseThreeBodySimulator:
         parts = self.Particles(self.n)
         parts.mass = np.full(self.n, self.cfg.mass_each) | self.units.MSun
 
-        radii = self.rng.uniform(self.cfg.init_radius_min, self.cfg.init_radius_max, size=(self.n, 1))
-        angles = self.rng.uniform(0.0, 2.0 * np.pi, size=(self.n, 1))
-        pos = np.concatenate((radii * np.cos(angles), radii * np.sin(angles)), axis=1)
+        pos = self._sample_initial_positions()
         vel = self.rng.normal(0.0, self.cfg.init_speed_scale, size=(self.n, self.dim))
 
         vel -= np.average(vel, axis=0)

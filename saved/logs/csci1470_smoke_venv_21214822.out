@@ -1,0 +1,124 @@
+=== SLURM JOB INFO ===
+job_id=21214822
+job_name=csci1470_smoke_venv
+node_list=skl-a-48
+submit_dir=/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470
+start_time=Sat Apr 25 01:13:39 AM EDT 2026
+/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470
+=== CREATE/ACTIVATE VENV ===
+Creating venv at: /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/.venv_csci1470_smoke
+Using python: /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/.venv_csci1470_smoke/bin/python
+Python 3.9.25
+Requirement already satisfied: pip in ./.venv_csci1470_smoke/lib/python3.9/site-packages (21.3.1)
+Collecting pip
+  Downloading pip-26.0.1-py3-none-any.whl (1.8 MB)
+Requirement already satisfied: setuptools in ./.venv_csci1470_smoke/lib/python3.9/site-packages (53.0.0)
+Collecting setuptools
+  Downloading setuptools-82.0.1-py3-none-any.whl (1.0 MB)
+Collecting wheel
+  Downloading wheel-0.47.0-py3-none-any.whl (32 kB)
+Collecting packaging>=24.0
+  Downloading packaging-26.2-py3-none-any.whl (100 kB)
+Installing collected packages: packaging, wheel, setuptools, pip
+  Attempting uninstall: setuptools
+    Found existing installation: setuptools 53.0.0
+    Uninstalling setuptools-53.0.0:
+      Successfully uninstalled setuptools-53.0.0
+  Attempting uninstall: pip
+    Found existing installation: pip 21.3.1
+    Uninstalling pip-21.3.1:
+      Successfully uninstalled pip-21.3.1
+Successfully installed packaging-26.2 pip-26.0.1 setuptools-82.0.1 wheel-0.47.0
+Collecting numpy>=1.21 (from -r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 1))
+  Downloading numpy-2.0.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (60 kB)
+Collecting matplotlib>=3.5 (from -r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading matplotlib-3.9.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (11 kB)
+Collecting pillow>=9.0 (from -r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 3))
+  Downloading pillow-11.3.0-cp39-cp39-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.0 kB)
+Collecting contourpy>=1.0.1 (from matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading contourpy-1.3.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.4 kB)
+Collecting cycler>=0.10 (from matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading cycler-0.12.1-py3-none-any.whl.metadata (3.8 kB)
+Collecting fonttools>=4.22.0 (from matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading fonttools-4.60.2-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (113 kB)
+Collecting kiwisolver>=1.3.1 (from matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading kiwisolver-1.4.7-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.metadata (6.3 kB)
+Requirement already satisfied: packaging>=20.0 in ./.venv_csci1470_smoke/lib/python3.9/site-packages (from matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2)) (26.2)
+Collecting pyparsing>=2.3.1 (from matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading pyparsing-3.3.2-py3-none-any.whl.metadata (5.8 kB)
+Collecting python-dateutil>=2.7 (from matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting importlib-resources>=3.2.0 (from matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading importlib_resources-6.5.2-py3-none-any.whl.metadata (3.9 kB)
+Collecting zipp>=3.1.0 (from importlib-resources>=3.2.0->matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading zipp-3.23.1-py3-none-any.whl.metadata (3.6 kB)
+Collecting six>=1.5 (from python-dateutil>=2.7->matplotlib>=3.5->-r /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/requirements-smoke.txt (line 2))
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Downloading numpy-2.0.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (19.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19.5/19.5 MB 96.9 MB/s  0:00:00
+Downloading matplotlib-3.9.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (8.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.3/8.3 MB 70.0 MB/s  0:00:00
+Downloading pillow-11.3.0-cp39-cp39-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 84.7 MB/s  0:00:00
+Downloading contourpy-1.3.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (321 kB)
+Downloading cycler-0.12.1-py3-none-any.whl (8.3 kB)
+Downloading fonttools-4.60.2-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.8/4.8 MB 59.0 MB/s  0:00:00
+Downloading importlib_resources-6.5.2-py3-none-any.whl (37 kB)
+Downloading kiwisolver-1.4.7-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (1.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 23.1 MB/s  0:00:00
+Downloading pyparsing-3.3.2-py3-none-any.whl (122 kB)
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading zipp-3.23.1-py3-none-any.whl (10 kB)
+Installing collected packages: zipp, six, pyparsing, pillow, numpy, kiwisolver, fonttools, cycler, python-dateutil, importlib-resources, contourpy, matplotlib
+
+Successfully installed contourpy-1.3.0 cycler-0.12.1 fonttools-4.60.2 importlib-resources-6.5.2 kiwisolver-1.4.7 matplotlib-3.9.4 numpy-2.0.2 pillow-11.3.0 pyparsing-3.3.2 python-dateutil-2.9.0.post0 six-1.17.0 zipp-3.23.1
+Venv ready: /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/.venv_csci1470_smoke
+=== SYSTEM DIAGNOSTICS ===
+ryreu
+skl-a-48.rc.rit.edu
+Linux skl-a-48.rc.rit.edu 6.6.82-1.el9.x86_64 #1 SMP PREEMPT_DYNAMIC Mon Mar 10 14:55:54 EDT 2025 x86_64 x86_64 x86_64 GNU/Linux
+=== GPU DIAGNOSTICS ===
+Sat Apr 25 01:13:56 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.90.07              Driver Version: 550.90.07      CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-PCIE-40GB          On  |   00000000:3B:00.0 Off |                    0 |
+| N/A   32C    P0             31W /  250W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+=== PYTHON DIAGNOSTICS ===
+/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/.venv_csci1470_smoke/bin/python
+Python 3.9.25
+Import check:
+  numpy: OK
+  matplotlib: OK
+  PIL: OK
+  torch: MISSING (ModuleNotFoundError)
+  amuse: MISSING (ModuleNotFoundError)
+  gym: MISSING (ModuleNotFoundError)
+  gymnasium: MISSING (ModuleNotFoundError)
+=== SYNTAX CHECK ===
+=== PLOT REFERENCE FIGURE-8 ===
+saved: /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/figures/reference_figure8.png
+=== ANIMATE REFERENCE FIGURE-8 ===
+saved: /home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/figures/reference_figure8_animation.gif
+=== RUN SMOKE TEST ===
+=== Smoke Test: Figure8ChoreographyEnv (numpy backend) ===
+policy=zero    avg_steps= 205.7  avg_reward=-7327926.737  avg_final_pos_err=74583.6858  avg_final_vel_err= 0.7785  collision_rate=0.33
+policy=random  avg_steps= 205.7  avg_reward=-7011021.566  avg_final_pos_err=72581.3279  avg_final_vel_err= 0.9308  collision_rate=0.33
+=== DONE ===
+end_time=Sat Apr 25 01:15:10 AM EDT 2026

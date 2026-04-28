@@ -30,8 +30,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--policy", type=str, default="deterministic", choices=["deterministic", "stochastic"])
     p.add_argument("--pos-threshold", type=float, default=0.35)
     p.add_argument("--vel-threshold", type=float, default=0.45)
+    p.add_argument("--consecutive-converged", type=int, default=12)
     p.add_argument("--trail-len", type=int, default=50)
     p.add_argument("--frame-stride", type=int, default=2)
+    p.add_argument("--axis-pad", type=float, default=0.12)
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
     p.add_argument("--outdir", type=str, default="")
     return p.parse_args()
@@ -63,6 +65,7 @@ def run_one_setup(
     policy: str,
     pos_threshold: float,
     vel_threshold: float,
+    consecutive_converged: int,
     device: torch.device,
 ) -> dict[str, Any]:
     env = Figure8ChoreographyEnv(config=cfg, weights=rw)
@@ -75,6 +78,9 @@ def run_one_setup(
     phase_hist = []
 
     converged_step = None
+    converge_streak = 0
+    collided_any = False
+    escaped_any = False
     done = False
     t = 0
 
@@ -85,6 +91,7 @@ def run_one_setup(
         with torch.no_grad():
             mean, std, _ = model(obs_t)
             mean = mean * cfg.max_action_norm
+            std = std * cfg.max_action_norm
             if policy == "stochastic":
                 dist = torch.distributions.Normal(mean, std)
                 act = dist.sample().squeeze(0)
@@ -99,14 +106,19 @@ def run_one_setup(
 
         pos_err = float(info.get("position_error", np.nan))
         vel_err = float(info.get("velocity_direction_error", np.nan))
+        step_collided = bool(info.get("collided", False))
+        step_escaped = bool(info.get("escaped", False))
+        collided_any = collided_any or step_collided
+        escaped_any = escaped_any or step_escaped
         pos_err_hist.append(pos_err)
         vel_err_hist.append(vel_err)
         reward_hist.append(float(reward))
         phase_hist.append(int(info.get("phase_idx", -1)))
 
-        if converged_step is None:
-            if (pos_err <= pos_threshold) and (vel_err <= vel_threshold):
-                converged_step = t + 1
+        meets = (pos_err <= pos_threshold) and (vel_err <= vel_threshold) and (not step_collided) and (not step_escaped)
+        converge_streak = (converge_streak + 1) if meets else 0
+        if converged_step is None and converge_streak >= max(1, int(consecutive_converged)):
+            converged_step = (t + 1) - int(consecutive_converged) + 1
 
         t += 1
 
@@ -117,23 +129,28 @@ def run_one_setup(
         min_pos_step = int(np.argmin(pos_err_hist) + 1)
         min_pos_err = float(np.min(pos_err_hist))
 
-    collided = bool(done and (t < max_steps))
+    final_pos_err = float(pos_err_hist[-1]) if pos_err_hist else float("nan")
+    final_vel_err = float(vel_err_hist[-1]) if vel_err_hist else float("nan")
+    collided = bool(collided_any)
+    escaped = bool(escaped_any)
 
-    # Ranking: reached threshold first; if none reached, use best min error earliest.
+    # Ranking: sustained convergence first, avoid terminal failures, then speed/error.
     has_converged = 0 if converged_step is not None else 1
+    has_failure = 1 if (collided or escaped) else 0
     rank_step = converged_step if converged_step is not None else (max_steps + 1)
 
     return {
         "setup_seed": setup_seed,
         "steps": t,
         "collided": collided,
+        "escaped": escaped,
         "converged_step": converged_step,
         "min_pos_err": min_pos_err,
         "min_pos_step": min_pos_step,
-        "final_pos_err": float(pos_err_hist[-1]) if pos_err_hist else float("nan"),
-        "final_vel_err": float(vel_err_hist[-1]) if vel_err_hist else float("nan"),
+        "final_pos_err": final_pos_err,
+        "final_vel_err": final_vel_err,
         "return_sum": float(np.sum(reward_hist)),
-        "rank_tuple": [has_converged, rank_step, min_pos_err, min_pos_step],
+        "rank_tuple": [has_converged, has_failure, rank_step, final_pos_err, min_pos_err, final_vel_err, min_pos_step],
         "positions_hist": np.asarray(positions_hist, dtype=np.float64),
         "pos_err_hist": pos_err_hist,
         "vel_err_hist": vel_err_hist,
@@ -153,6 +170,7 @@ def save_rollout_gif(
     title: str,
     trail_len: int,
     frame_stride: int,
+    axis_pad: float,
 ) -> None:
     fig, ax = plt.subplots(figsize=(8, 7), dpi=140)
     ax.plot(reference_path[:, 0], reference_path[:, 1], color="navy", linewidth=2.0, alpha=0.9, label="Reference")
@@ -174,6 +192,22 @@ def save_rollout_gif(
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_aspect("equal", adjustable="box")
+
+    pts_all = np.concatenate([reference_path, positions_hist.reshape(-1, 2)], axis=0)
+    finite_mask = np.all(np.isfinite(pts_all), axis=1)
+    pts_all = pts_all[finite_mask]
+    if pts_all.shape[0] > 0:
+        x_min = float(np.min(pts_all[:, 0]))
+        x_max = float(np.max(pts_all[:, 0]))
+        y_min = float(np.min(pts_all[:, 1]))
+        y_max = float(np.max(pts_all[:, 1]))
+        cx = 0.5 * (x_min + x_max)
+        cy = 0.5 * (y_min + y_max)
+        half = 0.5 * max(x_max - x_min, y_max - y_min)
+        half = max(half * (1.0 + max(0.0, axis_pad)), 1.2)
+        ax.set_xlim(cx - half, cx + half)
+        ax.set_ylim(cy - half, cy + half)
+
     ax.grid(alpha=0.25)
     ax.legend(loc="lower center", fontsize=9)
 
@@ -243,11 +277,12 @@ def main() -> None:
             policy=args.policy,
             pos_threshold=args.pos_threshold,
             vel_threshold=args.vel_threshold,
+            consecutive_converged=args.consecutive_converged,
             device=device,
         )
         print(
             f"[setup seed={s}] converged_step={rec['converged_step']} min_pos_err={rec['min_pos_err']:.6f} "
-            f"final_pos_err={rec['final_pos_err']:.6f} collided={rec['collided']}"
+            f"final_pos_err={rec['final_pos_err']:.6f} collided={rec['collided']} escaped={rec['escaped']}"
         )
         runs.append(rec)
 
@@ -264,6 +299,7 @@ def main() -> None:
             title=f"Setup {i} (seed={r['setup_seed']})",
             trail_len=args.trail_len,
             frame_stride=args.frame_stride,
+            axis_pad=args.axis_pad,
         )
         r["gif_path"] = str(gif_path)
 
@@ -276,6 +312,7 @@ def main() -> None:
         title=f"Best Convergence (seed={best['setup_seed']})",
         trail_len=args.trail_len,
         frame_stride=args.frame_stride,
+        axis_pad=args.axis_pad,
     )
 
     # Save summaries (without raw trajectories to keep JSON small).
@@ -291,6 +328,7 @@ def main() -> None:
         "setup_seeds": setup_seeds,
         "policy": args.policy,
         "thresholds": {"pos": args.pos_threshold, "vel": args.vel_threshold},
+        "consecutive_converged": args.consecutive_converged,
         "best_index": best_idx,
         "best_seed": best["setup_seed"],
         "best_rank_tuple": best["rank_tuple"],
