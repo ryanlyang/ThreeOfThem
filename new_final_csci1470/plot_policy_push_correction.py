@@ -180,10 +180,10 @@ def _plot_panel(
     x_min, x_max = float(np.min(all_pts[:, 0])), float(np.max(all_pts[:, 0]))
     y_min, y_max = float(np.min(all_pts[:, 1])), float(np.max(all_pts[:, 1]))
     cx, cy = 0.5 * (x_min + x_max), 0.5 * (y_min + y_max)
-    half = 0.5 * max(x_max - x_min, y_max - y_min)
-    half = max(half * (1.0 + max(0.0, axis_pad)), 1.2)
-    ax.set_xlim(cx - half, cx + half)
-    ax.set_ylim(cy - half, cy + half)
+    x_half = max(0.5 * (x_max - x_min) * (1.0 + max(0.0, axis_pad)), 1.25)
+    y_half = max(0.5 * (y_max - y_min) * (1.0 + 0.55 * max(0.0, axis_pad)), 0.58)
+    ax.set_xlim(cx - x_half, cx + x_half)
+    ax.set_ylim(cy - y_half, cy + y_half)
 
     for i, (c, lbl) in enumerate(zip(colors, labels)):
         p = state_pos[i]
@@ -219,7 +219,7 @@ def _plot_panel(
     ax.set_title(f"Step {step}")
 
     txt = f"pos_err={pos_err:.3f}\nvel_err={vel_err:.3f}\nfuel_penalty={fuel_penalty:.4f}"
-    ax.text(0.02, 0.98, txt, transform=ax.transAxes, va="top", ha="left", fontsize=10, bbox=dict(boxstyle="round", facecolor="white", alpha=0.72, edgecolor="0.7"))
+    ax.text(0.02, 0.98, txt, transform=ax.transAxes, va="top", ha="left", fontsize=9, bbox=dict(boxstyle="round", facecolor="white", alpha=0.72, edgecolor="0.7"))
 
 
 def main() -> None:
@@ -304,7 +304,7 @@ def main() -> None:
     out_png = out_dir / f"{args.basename}.png"
     out_pdf = out_dir / f"{args.basename}.pdf"
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.6), dpi=300)
+    fig, axes = plt.subplots(1, 2, figsize=(13.2, 4.15), dpi=300)
 
     _plot_panel(
         ax=axes[0],
@@ -345,26 +345,25 @@ def main() -> None:
     axes[1].set_title(f"After Correction (step {fr1['step']})")
 
     mode = "PPO policy actions" if ckpt_path is not None else "Heuristic controller actions (no checkpoint found)"
-    fig.suptitle(f"Pushes Toward Figure-8 Choreography\n{mode}", fontsize=13)
     push_label = "RL model push/action" if ckpt_path is not None else "Controller push/action"
     legend_handles = [
-        Line2D([0], [0], color="0.65", linewidth=2.0, label="Figure-8 guide path"),
-        Line2D([0], [0], marker="o", linestyle="None", markerfacecolor="darkorange", markeredgecolor="black", markersize=7, label="Body positions (orange/green/blue = Body 1/2/3)"),
-        Line2D([0], [0], marker="x", linestyle="None", color="darkorange", markersize=7, markeredgewidth=1.8, label="Assigned target slots"),
-        Line2D([0], [0], color="darkorange", linestyle="--", linewidth=1.5, label="Position error to target"),
-        Line2D([0], [0], color="black", linewidth=1.7, marker=">", markersize=6, label="Velocity direction"),
-        Line2D([0], [0], color="crimson", linewidth=2.2, marker=">", markersize=6, label=push_label),
+        Line2D([0], [0], color="0.65", linewidth=2.8, label="Figure-8 guide path"),
+        Line2D([0], [0], marker="o", linestyle="None", markerfacecolor="darkorange", markeredgecolor="black", markersize=11, label="Body positions"),
+        Line2D([0], [0], marker="x", linestyle="None", color="darkorange", markersize=11, markeredgewidth=2.4, label="Assigned targets"),
+        Line2D([0], [0], color="darkorange", linestyle="--", linewidth=2.4, label="Position error"),
+        Line2D([0], [0], color="black", linewidth=2.5, marker=">", markersize=10, label="Velocity direction"),
+        Line2D([0], [0], color="crimson", linewidth=3.2, marker=">", markersize=10, label=push_label),
     ]
     fig.legend(
         handles=legend_handles,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.01),
-        fontsize=8,
-        ncol=3,
+        bbox_to_anchor=(0.5, 0.025),
+        fontsize=11.4,
+        ncol=6,
         frameon=True,
         framealpha=0.93,
     )
-    fig.tight_layout(rect=[0, 0.12, 1, 1])
+    fig.tight_layout(rect=[0, 0.16, 1, 1])
     fig.savefig(out_png, bbox_inches="tight")
     fig.savefig(out_pdf, bbox_inches="tight")
     plt.close(fig)
