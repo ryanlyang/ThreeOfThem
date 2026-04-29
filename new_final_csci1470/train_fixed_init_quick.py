@@ -19,6 +19,8 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     p.add_argument("--run-name", type=str, default="fixedinit_quick")
     p.add_argument("--save-dir", type=str, default="artifacts")
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
+    p.add_argument("--vec-env", type=str, default="subproc", choices=["sync", "subproc"])
+    p.add_argument("--mp-start-method", type=str, default="spawn", choices=["spawn", "fork", "forkserver"])
     p.add_argument("--fixed-init-profile", type=str, default="near_ref", choices=["none", "weird", "near_ref"])
     p.add_argument("--fixed-init-positions", type=str, default="")
     p.add_argument("--fixed-init-velocities", type=str, default="")
@@ -77,6 +79,10 @@ def main() -> None:
         args.save_dir,
         "--device",
         args.device,
+        "--vec-env",
+        args.vec_env,
+        "--mp-start-method",
+        args.mp_start_method,
         "--fixed-init-profile",
         args.fixed_init_profile,
         "--fixed-init-positions",

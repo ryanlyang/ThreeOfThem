@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import atexit
 import argparse
 import csv
 import json
@@ -21,6 +22,7 @@ from choreography_env import Figure8ChoreographyEnv
 from config import EnvConfig, RewardWeights
 from fixed_init_profiles import resolve_fixed_init
 from ppo_agent import ActorCritic, PPOBatch, RunningMeanStd, gaussian_entropy, gaussian_log_prob
+from vec_env import SerialVecEnv, SubprocVecEnv
 
 
 def parse_args() -> argparse.Namespace:
@@ -32,6 +34,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--rollout-steps", type=int, default=128)
     p.add_argument("--ppo-epochs", type=int, default=8)
     p.add_argument("--minibatch-size", type=int, default=256)
+
+    # Parallel env stepping.
+    p.add_argument("--vec-env", type=str, default="subproc", choices=["sync", "subproc"])
+    p.add_argument("--mp-start-method", type=str, default="spawn", choices=["spawn", "fork", "forkserver"])
 
     # PPO params.
     p.add_argument("--gamma", type=float, default=0.995)
@@ -388,20 +394,32 @@ def main() -> None:
     print(f"[train] device={device}")
     print(f"[train] run_dir={run_dir}")
 
-    envs = [Figure8ChoreographyEnv(config=cfg, weights=rw) for _ in range(args.num_envs)]
-
-    obs_dim = envs[0].observation_dim
-    action_dim = int(np.prod(envs[0].action_shape))
+    probe_env = Figure8ChoreographyEnv(config=cfg, weights=rw)
+    obs_dim = probe_env.observation_dim
+    action_shape = probe_env.action_shape
+    action_dim = int(np.prod(action_shape))
     max_action = cfg.max_action_norm
+    del probe_env
 
     obs_rms = RunningMeanStd(shape=(obs_dim,))
 
     model = ActorCritic(obs_dim=obs_dim, action_dim=action_dim).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, eps=1e-5)
 
-    obs = np.zeros((args.num_envs, obs_dim), dtype=np.float32)
-    for i, env in enumerate(envs):
-        obs[i], _ = env.reset(seed=int(rng.integers(1, 2**31 - 1)))
+    if args.vec_env == "subproc":
+        envs: SubprocVecEnv | SerialVecEnv = SubprocVecEnv(
+            cfg,
+            rw,
+            args.num_envs,
+            seed=args.seed,
+            start_method=args.mp_start_method,
+        )
+    else:
+        envs = SerialVecEnv(cfg, rw, args.num_envs, seed=args.seed)
+
+    reset_seeds = [int(rng.integers(1, 2**31 - 1)) for _ in range(args.num_envs)]
+    obs, _ = envs.reset(seeds=reset_seeds)
+    atexit.register(envs.close)
     obs_rms.update(obs)
 
     ep_returns = np.zeros(args.num_envs, dtype=np.float64)
@@ -447,28 +465,20 @@ def main() -> None:
             logp_buf[t] = logp_t.cpu().numpy()
             val_buf[t] = value.cpu().numpy()
 
-            next_obs = np.zeros_like(obs)
+            actions_env = action_np.reshape(args.num_envs, *action_shape)
+            next_obs, reward_raw, done_arr, _ = envs.step(actions_env)
 
-            for i, env in enumerate(envs):
-                action_2d = action_np[i].reshape(env.action_shape)
-                o2, r_raw, done, info = env.step(action_2d)
+            rew_buf[t] = np.clip(reward_raw / args.reward_scale, -args.reward_clip, args.reward_clip)
+            done_buf[t] = done_arr
 
-                ep_returns[i] += float(r_raw)
+            for i in range(args.num_envs):
+                ep_returns[i] += float(reward_raw[i])
                 ep_lengths[i] += 1
-
-                r_proc = float(np.clip(r_raw / args.reward_scale, -args.reward_clip, args.reward_clip))
-
-                rew_buf[t, i] = r_proc
-                done_buf[t, i] = float(done)
-
-                if done:
+                if bool(done_arr[i]):
                     finished_returns.append(float(ep_returns[i]))
                     finished_lengths.append(int(ep_lengths[i]))
                     ep_returns[i] = 0.0
                     ep_lengths[i] = 0
-                    o2, _ = env.reset(seed=int(rng.integers(1, 2**31 - 1)))
-
-                next_obs[i] = o2
 
             obs = next_obs
 
@@ -635,6 +645,7 @@ def main() -> None:
 
         write_metrics_csv(run_dir / "metrics.csv", metrics_rows)
 
+    envs.close()
     maybe_plot_metrics(run_dir / "metrics.png", metrics_rows)
 
     print(f"[done] best_eval_return={best_eval:.3f}")

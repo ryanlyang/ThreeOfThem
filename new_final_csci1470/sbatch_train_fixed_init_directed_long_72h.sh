@@ -2,6 +2,7 @@
 #SBATCH --job-name=csci1470_fixedinit_directed_long
 #SBATCH --partition=tier3
 #SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=32
 #SBATCH --mem=48G
 #SBATCH --time=120:00:00
 #SBATCH --output=logs/%x_%j.out
@@ -40,6 +41,12 @@ which python
 python --version
 nvidia-smi || true
 
+# Keep BLAS/OpenMP thread pools from oversubscribing per worker process.
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
+
 RUN_NAME="${RUN_NAME:-fixedinit_directed_long_${PIPE_TAG}}"
 UPDATES="${UPDATES:-4200}"
 NUM_ENVS="${NUM_ENVS:-12}"
@@ -49,6 +56,8 @@ MINIBATCH_SIZE="${MINIBATCH_SIZE:-512}"
 EVAL_EVERY="${EVAL_EVERY:-20}"
 EVAL_EPISODES="${EVAL_EPISODES:-24}"
 SEED="${SEED:-4301}"
+VEC_ENV="${VEC_ENV:-subproc}"
+MP_START_METHOD="${MP_START_METHOD:-fork}"
 
 python train_fixed_init_quick.py \
   --updates "$UPDATES" \
@@ -81,7 +90,9 @@ python train_fixed_init_quick.py \
   --eval-vel-threshold "${EVAL_VEL_THRESHOLD:-0.10}" \
   --eval-consecutive-converged "${EVAL_CONSECUTIVE_CONVERGED:-300}" \
   --eval-min-total-steps "${EVAL_MIN_TOTAL_STEPS:-360}" \
-  --save-topk "${SAVE_TOPK:-3}"
+  --save-topk "${SAVE_TOPK:-3}" \
+  --vec-env "$VEC_ENV" \
+  --mp-start-method "$MP_START_METHOD"
 
 RUN_DIR=$(ls -dt "$PWD"/artifacts/${RUN_NAME}_* | head -n1)
 echo "$RUN_DIR" > "$PIPE_DIR/train_run_dir.txt"
