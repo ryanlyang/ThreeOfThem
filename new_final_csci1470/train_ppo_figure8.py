@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import os
+import shutil
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -80,6 +81,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval-consecutive-converged", type=int, default=180)
     p.add_argument("--eval-min-total-steps", type=int, default=220)
     p.add_argument("--eval-lock-to-end", action="store_true")
+    p.add_argument("--save-topk", type=int, default=1)
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
     p.add_argument("--run-name", type=str, default="ppo_figure8")
@@ -306,6 +308,63 @@ def maybe_plot_metrics(path: Path, rows: list[dict[str, Any]]) -> None:
     plt.close(fig)
 
 
+def _update_topk_checkpoints(
+    run_dir: Path,
+    ckpt: dict[str, Any],
+    eval_key: tuple[float, ...],
+    update: int,
+    topk_limit: int,
+    topk_entries: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], bool]:
+    qualifies = (len(topk_entries) < topk_limit) or (tuple(eval_key) < tuple(topk_entries[-1]["eval_key"]))
+    if not qualifies:
+        return topk_entries, False
+
+    cand_path = run_dir / f"checkpoint_candidate_update_{int(update):05d}.pt"
+    torch.save(ckpt, cand_path)
+
+    topk_entries.append(
+        {
+            "update": int(update),
+            "eval_key": tuple(float(x) for x in eval_key),
+            "candidate_path": str(cand_path),
+        }
+    )
+    topk_entries.sort(key=lambda e: tuple(e["eval_key"]))
+
+    while len(topk_entries) > topk_limit:
+        drop = topk_entries.pop(-1)
+        drop_path = Path(drop["candidate_path"])
+        if drop_path.exists():
+            drop_path.unlink()
+
+    for rank in range(1, topk_limit + 1):
+        rp = run_dir / f"checkpoint_best_rank{rank}.pt"
+        if rp.exists():
+            rp.unlink()
+
+    manifest = []
+    for rank, entry in enumerate(topk_entries, start=1):
+        src = Path(entry["candidate_path"])
+        dst = run_dir / f"checkpoint_best_rank{rank}.pt"
+        shutil.copy2(src, dst)
+        manifest.append(
+            {
+                "rank": rank,
+                "update": int(entry["update"]),
+                "eval_key": list(entry["eval_key"]),
+                "path": str(dst),
+            }
+        )
+
+    if len(manifest) > 0:
+        shutil.copy2(run_dir / "checkpoint_best_rank1.pt", run_dir / "checkpoint_best.pt")
+    with (run_dir / "checkpoint_topk_manifest.json").open("w") as f:
+        json.dump({"topk": topk_limit, "entries": manifest}, f, indent=2)
+
+    return topk_entries, True
+
+
 def main() -> None:
     args = parse_args()
     device = choose_device(args.device)
@@ -352,6 +411,8 @@ def main() -> None:
 
     best_eval = -np.inf
     best_eval_key: tuple[float, ...] | None = None
+    topk_limit = max(1, int(args.save_topk))
+    topk_entries: list[dict[str, Any]] = []
     metrics_rows: list[dict[str, Any]] = []
 
     for update in range(1, args.updates + 1):
@@ -551,9 +612,16 @@ def main() -> None:
                     float(eval_stats["eval_final_vel_err"]),
                     -float(eval_stats["eval_return_mean"]),
                 )
-            if (best_eval_key is None) or (eval_key < best_eval_key):
-                best_eval_key = eval_key
-                torch.save(ckpt, run_dir / "checkpoint_best.pt")
+            topk_entries, changed = _update_topk_checkpoints(
+                run_dir=run_dir,
+                ckpt=ckpt,
+                eval_key=tuple(float(x) for x in eval_key),
+                update=update,
+                topk_limit=topk_limit,
+                topk_entries=topk_entries,
+            )
+            if changed and len(topk_entries) > 0:
+                best_eval_key = tuple(topk_entries[0]["eval_key"])
 
         metrics_rows.append(row)
 

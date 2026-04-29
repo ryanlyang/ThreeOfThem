@@ -44,6 +44,7 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     p.add_argument("--eval-consecutive-converged", type=int, default=180)
     p.add_argument("--eval-min-total-steps", type=int, default=220)
     p.add_argument("--eval-lock-to-end", action="store_true", default=True)
+    p.add_argument("--save-topk", type=int, default=3)
     return p.parse_known_args()
 
 
@@ -122,6 +123,8 @@ def main() -> None:
         str(args.eval_consecutive_converged),
         "--eval-min-total-steps",
         str(args.eval_min_total_steps),
+        "--save-topk",
+        str(args.save_topk),
     ]
     if args.eval_strict_mode:
         cmd.append("--eval-strict-mode")
