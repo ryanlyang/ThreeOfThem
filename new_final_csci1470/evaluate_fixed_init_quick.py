@@ -8,15 +8,16 @@ from pathlib import Path
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Evaluate and render GIF for a fixed-init checkpoint (single deterministic initial state)."
+        description="Strict evaluation + GIF for a fixed-init checkpoint (single deterministic initial state)."
     )
     p.add_argument("--checkpoint", type=str, required=True)
     p.add_argument("--episodes", type=int, default=12)
     p.add_argument("--num-setups", type=int, default=1)
-    p.add_argument("--max-steps", type=int, default=320)
-    p.add_argument("--pos-threshold", type=float, default=0.35)
-    p.add_argument("--vel-threshold", type=float, default=0.45)
-    p.add_argument("--consecutive-converged", type=int, default=20)
+    p.add_argument("--max-steps", type=int, default=260)
+    p.add_argument("--pos-threshold", type=float, default=0.08)
+    p.add_argument("--vel-threshold", type=float, default=0.12)
+    p.add_argument("--consecutive-converged", type=int, default=180)
+    p.add_argument("--min-total-steps-for-converged", type=int, default=220)
     p.add_argument("--trail-len", type=int, default=70)
     p.add_argument("--frame-stride", type=int, default=1)
     p.add_argument("--axis-pad", type=float, default=0.20)
@@ -64,6 +65,12 @@ def main() -> None:
         str(args.vel_threshold),
         "--consecutive-converged",
         str(args.consecutive_converged),
+        "--strict-mode",
+        "--lock-to-end",
+        "--require-no-failure",
+        "--require-final-threshold",
+        "--min-total-steps-for-converged",
+        str(args.min_total_steps_for_converged),
         "--trail-len",
         str(args.trail_len),
         "--frame-stride",

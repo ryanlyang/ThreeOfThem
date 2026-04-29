@@ -31,6 +31,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--pos-threshold", type=float, default=0.35)
     p.add_argument("--vel-threshold", type=float, default=0.45)
     p.add_argument("--consecutive-converged", type=int, default=12)
+    p.add_argument("--strict-mode", action="store_true", help="Apply strict convergence gating.")
+    p.add_argument("--lock-to-end", action="store_true", help="Require staying converged until episode end once converged.")
+    p.add_argument("--require-no-failure", action="store_true", help="Require no collision/escape for convergence.")
+    p.add_argument("--require-final-threshold", action="store_true", help="Require final errors under thresholds for convergence.")
+    p.add_argument("--min-total-steps-for-converged", type=int, default=0, help="Require at least this many simulated steps for convergence.")
     p.add_argument("--trail-len", type=int, default=50)
     p.add_argument("--frame-stride", type=int, default=2)
     p.add_argument("--axis-pad", type=float, default=0.12)
@@ -66,6 +71,11 @@ def run_one_setup(
     pos_threshold: float,
     vel_threshold: float,
     consecutive_converged: int,
+    strict_mode: bool,
+    lock_to_end: bool,
+    require_no_failure: bool,
+    require_final_threshold: bool,
+    min_total_steps_for_converged: int,
     device: torch.device,
 ) -> dict[str, Any]:
     env = Figure8ChoreographyEnv(config=cfg, weights=rw)
@@ -79,6 +89,8 @@ def run_one_setup(
 
     converged_step = None
     converge_streak = 0
+    max_converge_streak = 0
+    broke_after_lock = False
     collided_any = False
     escaped_any = False
     done = False
@@ -116,7 +128,14 @@ def run_one_setup(
         phase_hist.append(int(info.get("phase_idx", -1)))
 
         meets = (pos_err <= pos_threshold) and (vel_err <= vel_threshold) and (not step_collided) and (not step_escaped)
-        converge_streak = (converge_streak + 1) if meets else 0
+        if meets:
+            converge_streak += 1
+            max_converge_streak = max(max_converge_streak, converge_streak)
+        else:
+            if converged_step is not None:
+                broke_after_lock = True
+            converge_streak = 0
+
         if converged_step is None and converge_streak >= max(1, int(consecutive_converged)):
             converged_step = (t + 1) - int(consecutive_converged) + 1
 
@@ -133,11 +152,52 @@ def run_one_setup(
     final_vel_err = float(vel_err_hist[-1]) if vel_err_hist else float("nan")
     collided = bool(collided_any)
     escaped = bool(escaped_any)
+    no_failure = not (collided or escaped)
 
-    # Ranking: sustained convergence first, avoid terminal failures, then speed/error.
-    has_converged = 0 if converged_step is not None else 1
-    has_failure = 1 if (collided or escaped) else 0
-    rank_step = converged_step if converged_step is not None else (max_steps + 1)
+    final_under_threshold = (
+        np.isfinite(final_pos_err)
+        and np.isfinite(final_vel_err)
+        and (final_pos_err <= pos_threshold)
+        and (final_vel_err <= vel_threshold)
+    )
+    enough_total_steps = t >= max(0, int(min_total_steps_for_converged))
+    sustained_after_lock = (
+        (converged_step is not None)
+        and (not broke_after_lock)
+        and (converge_streak >= max(1, int(consecutive_converged)))
+    )
+
+    basic_converged = converged_step is not None
+    strict_converged = basic_converged
+    if strict_mode:
+        if lock_to_end:
+            strict_converged = strict_converged and sustained_after_lock
+        if require_no_failure:
+            strict_converged = strict_converged and no_failure
+        if require_final_threshold:
+            strict_converged = strict_converged and final_under_threshold
+        strict_converged = strict_converged and enough_total_steps
+
+    if strict_mode:
+        has_converged = 0 if strict_converged else 1
+        has_failure = 1 if not no_failure else 0
+        rank_step = converged_step if converged_step is not None else (max_steps + 1)
+        rank_tuple = [
+            has_converged,
+            has_failure,
+            rank_step,
+            -int(max_converge_streak),
+            final_pos_err,
+            final_vel_err,
+            min_pos_err,
+            min_pos_step,
+        ]
+    else:
+        # Legacy ranking: any first-hit convergence counts even if not sustained.
+        has_converged = 0 if converged_step is not None else 1
+        has_failure = 1 if (collided or escaped) else 0
+        rank_step = converged_step if converged_step is not None else (max_steps + 1)
+        rank_tuple = [has_converged, has_failure, rank_step, final_pos_err, min_pos_err, final_vel_err, min_pos_step]
 
     return {
         "setup_seed": setup_seed,
@@ -145,12 +205,20 @@ def run_one_setup(
         "collided": collided,
         "escaped": escaped,
         "converged_step": converged_step,
+        "basic_converged": bool(basic_converged),
+        "strict_converged": bool(strict_converged),
+        "max_converge_streak": int(max_converge_streak),
+        "end_converge_streak": int(converge_streak),
+        "sustained_after_lock": bool(sustained_after_lock),
+        "final_under_threshold": bool(final_under_threshold),
+        "no_failure": bool(no_failure),
+        "enough_total_steps": bool(enough_total_steps),
         "min_pos_err": min_pos_err,
         "min_pos_step": min_pos_step,
         "final_pos_err": final_pos_err,
         "final_vel_err": final_vel_err,
         "return_sum": float(np.sum(reward_hist)),
-        "rank_tuple": [has_converged, has_failure, rank_step, final_pos_err, min_pos_err, final_vel_err, min_pos_step],
+        "rank_tuple": rank_tuple,
         "positions_hist": np.asarray(positions_hist, dtype=np.float64),
         "pos_err_hist": pos_err_hist,
         "vel_err_hist": vel_err_hist,
@@ -278,10 +346,16 @@ def main() -> None:
             pos_threshold=args.pos_threshold,
             vel_threshold=args.vel_threshold,
             consecutive_converged=args.consecutive_converged,
+            strict_mode=args.strict_mode,
+            lock_to_end=args.lock_to_end,
+            require_no_failure=args.require_no_failure,
+            require_final_threshold=args.require_final_threshold,
+            min_total_steps_for_converged=args.min_total_steps_for_converged,
             device=device,
         )
         print(
-            f"[setup seed={s}] converged_step={rec['converged_step']} min_pos_err={rec['min_pos_err']:.6f} "
+            f"[setup seed={s}] strict_converged={rec['strict_converged']} converged_step={rec['converged_step']} "
+            f"streak_end={rec['end_converge_streak']} min_pos_err={rec['min_pos_err']:.6f} "
             f"final_pos_err={rec['final_pos_err']:.6f} collided={rec['collided']} escaped={rec['escaped']}"
         )
         runs.append(rec)
@@ -329,6 +403,13 @@ def main() -> None:
         "policy": args.policy,
         "thresholds": {"pos": args.pos_threshold, "vel": args.vel_threshold},
         "consecutive_converged": args.consecutive_converged,
+        "strict_criteria": {
+            "strict_mode": bool(args.strict_mode),
+            "lock_to_end": bool(args.lock_to_end),
+            "require_no_failure": bool(args.require_no_failure),
+            "require_final_threshold": bool(args.require_final_threshold),
+            "min_total_steps_for_converged": int(args.min_total_steps_for_converged),
+        },
         "best_index": best_idx,
         "best_seed": best["setup_seed"],
         "best_rank_tuple": best["rank_tuple"],

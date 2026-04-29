@@ -66,8 +66,11 @@ python evaluate_fixed_init_quick.py \
   --checkpoint "$CKPT_PATH" \
   --episodes "${EVAL_EPISODES:-12}" \
   --num-setups "${NUM_SETUPS:-1}" \
-  --max-steps "${MAX_STEPS:-320}" \
-  --consecutive-converged "${CONSECUTIVE_CONVERGED:-20}" \
+  --max-steps "${MAX_STEPS:-260}" \
+  --pos-threshold "${POS_THRESHOLD:-0.08}" \
+  --vel-threshold "${VEL_THRESHOLD:-0.12}" \
+  --consecutive-converged "${CONSECUTIVE_CONVERGED:-180}" \
+  --min-total-steps-for-converged "${MIN_TOTAL_STEPS_FOR_CONVERGED:-220}" \
   --trail-len "${TRAIL_LEN:-70}" \
   --frame-stride "${FRAME_STRIDE:-1}" \
   --axis-pad "${AXIS_PAD:-0.20}" \
