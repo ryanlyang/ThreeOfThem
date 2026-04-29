@@ -34,6 +34,22 @@ NEAR_REF_FIXED_VELOCITIES_2D: tuple[tuple[float, float], tuple[float, float], tu
 )
 
 
+# Fixed recovery test profile: deliberately off the exact Figure-8, but not on
+# an immediate collision trajectory. With zero thrust this state survives the
+# episode but drifts away from the target choreography.
+OFFSET_REF_FIXED_POSITIONS_2D: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = (
+    (-0.92956791, 0.33390607),
+    (-0.08033380, -0.01177237),
+    (1.00990170, -0.32213373),
+)
+
+OFFSET_REF_FIXED_VELOCITIES_2D: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = (
+    (-0.39099955, -0.47833147),
+    (0.85313223, 0.90381656),
+    (-0.46213266, -0.42548510),
+)
+
+
 def parse_points_2d(spec: str) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
     """
     Parse 'x1,y1;x2,y2;x3,y3' into a 3x2 tuple.
@@ -89,6 +105,15 @@ def resolve_fixed_init(
     if profile == "near_ref":
         pos = NEAR_REF_FIXED_POSITIONS_2D
         vel = NEAR_REF_FIXED_VELOCITIES_2D
+        if pos_spec:
+            pos = parse_points_2d(pos_spec)
+        if vel_spec:
+            vel = parse_points_2d(vel_spec)
+        return pos, vel
+
+    if profile == "offset_ref":
+        pos = OFFSET_REF_FIXED_POSITIONS_2D
+        vel = OFFSET_REF_FIXED_VELOCITIES_2D
         if pos_spec:
             pos = parse_points_2d(pos_spec)
         if vel_spec:

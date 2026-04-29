@@ -10,7 +10,7 @@ PIPE_TAG="${PIPE_TAG:-fixedinit_zerojitter_$(date +%Y%m%d_%H%M%S)}"
 echo "Submitting ZERO-JITTER fixed-init training job with PIPE_TAG=$PIPE_TAG"
 TRAIN_JOB_ID=$(
   sbatch --parsable \
-    --export=ALL,PIPE_TAG="$PIPE_TAG",RUN_NAME="fixedinit_zerojitter_${PIPE_TAG}",FIXED_INIT_POS_JITTER_STD=0.0,FIXED_INIT_VEL_JITTER_STD=0.0,FIXED_INIT_JITTER_TRIES=1 \
+    --export=ALL,PIPE_TAG="$PIPE_TAG",RUN_NAME="fixedinit_offset_zerojitter_${PIPE_TAG}",FIXED_INIT_PROFILE=offset_ref,FIXED_INIT_POS_JITTER_STD=0.0,FIXED_INIT_VEL_JITTER_STD=0.0,FIXED_INIT_JITTER_TRIES=1 \
     sbatch_train_fixed_init_quick_30m.sh
 )
 

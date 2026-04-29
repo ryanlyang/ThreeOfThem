@@ -49,6 +49,12 @@ MINIBATCH_SIZE="${MINIBATCH_SIZE:-256}"
 EVAL_EVERY="${EVAL_EVERY:-15}"
 EVAL_EPISODES="${EVAL_EPISODES:-12}"
 SEED="${SEED:-4301}"
+FIXED_INIT_PROFILE="${FIXED_INIT_PROFILE:-near_ref}"
+FIXED_INIT_POSITIONS="${FIXED_INIT_POSITIONS:-}"
+FIXED_INIT_VELOCITIES="${FIXED_INIT_VELOCITIES:-}"
+FIXED_INIT_POS_JITTER_STD="${FIXED_INIT_POS_JITTER_STD:-0.008}"
+FIXED_INIT_VEL_JITTER_STD="${FIXED_INIT_VEL_JITTER_STD:-0.006}"
+FIXED_INIT_JITTER_TRIES="${FIXED_INIT_JITTER_TRIES:-64}"
 
 python train_fixed_init_quick.py \
   --updates "$UPDATES" \
@@ -61,7 +67,13 @@ python train_fixed_init_quick.py \
   --seed "$SEED" \
   --run-name "$RUN_NAME" \
   --save-dir artifacts \
-  --device auto
+  --device auto \
+  --fixed-init-profile "$FIXED_INIT_PROFILE" \
+  --fixed-init-positions "$FIXED_INIT_POSITIONS" \
+  --fixed-init-velocities "$FIXED_INIT_VELOCITIES" \
+  --fixed-init-pos-jitter-std "$FIXED_INIT_POS_JITTER_STD" \
+  --fixed-init-vel-jitter-std "$FIXED_INIT_VEL_JITTER_STD" \
+  --fixed-init-jitter-tries "$FIXED_INIT_JITTER_TRIES"
 
 RUN_DIR=$(ls -dt "$PWD"/artifacts/${RUN_NAME}_* | head -n1)
 echo "$RUN_DIR" > "$PIPE_DIR/train_run_dir.txt"
