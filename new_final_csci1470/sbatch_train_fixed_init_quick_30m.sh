@@ -3,7 +3,7 @@
 #SBATCH --partition=debug
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
-#SBATCH --time=02:00:00
+#SBATCH --time=04:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
@@ -41,13 +41,13 @@ python --version
 nvidia-smi || true
 
 RUN_NAME="${RUN_NAME:-fixedinit_quick_${PIPE_TAG}}"
-UPDATES="${UPDATES:-300}"
-NUM_ENVS="${NUM_ENVS:-4}"
-ROLLOUT_STEPS="${ROLLOUT_STEPS:-64}"
-PPO_EPOCHS="${PPO_EPOCHS:-4}"
-MINIBATCH_SIZE="${MINIBATCH_SIZE:-128}"
-EVAL_EVERY="${EVAL_EVERY:-10}"
-EVAL_EPISODES="${EVAL_EPISODES:-8}"
+UPDATES="${UPDATES:-900}"
+NUM_ENVS="${NUM_ENVS:-8}"
+ROLLOUT_STEPS="${ROLLOUT_STEPS:-128}"
+PPO_EPOCHS="${PPO_EPOCHS:-6}"
+MINIBATCH_SIZE="${MINIBATCH_SIZE:-256}"
+EVAL_EVERY="${EVAL_EVERY:-15}"
+EVAL_EPISODES="${EVAL_EPISODES:-12}"
 SEED="${SEED:-4301}"
 
 python train_fixed_init_quick.py \

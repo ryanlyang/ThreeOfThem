@@ -39,6 +39,53 @@ def _resolve_fixed_state(cfg: EnvConfig, n: int, dim: int) -> tuple[np.ndarray, 
     return pos, vel
 
 
+def _apply_fixed_state_jitter(
+    cfg: EnvConfig,
+    rng: np.random.Generator,
+    base_pos: np.ndarray,
+    base_vel: np.ndarray,
+    collision_radius: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    pos_std = max(0.0, float(cfg.fixed_init_pos_jitter_std))
+    vel_std = max(0.0, float(cfg.fixed_init_vel_jitter_std))
+    if pos_std <= 0.0 and vel_std <= 0.0:
+        return base_pos.copy(), base_vel.copy()
+
+    tries = max(1, int(cfg.fixed_init_jitter_tries))
+    min_sep = max(float(cfg.init_min_pair_distance), 2.0 * collision_radius * 1.05)
+
+    best_pos = base_pos.copy()
+    best_vel = base_vel.copy()
+    best_min_dist = _min_pair_distance(best_pos)
+
+    for _ in range(tries):
+        pos = base_pos.copy()
+        vel = base_vel.copy()
+
+        if pos_std > 0.0:
+            pos_jitter = rng.normal(0.0, pos_std, size=base_pos.shape)
+            # Keep global translation close to the base setup.
+            pos_jitter -= np.mean(pos_jitter, axis=0, keepdims=True)
+            pos = base_pos + pos_jitter
+
+        if vel_std > 0.0:
+            vel_jitter = rng.normal(0.0, vel_std, size=base_vel.shape)
+            # Keep net momentum perturbation near zero.
+            vel_jitter -= np.mean(vel_jitter, axis=0, keepdims=True)
+            vel = base_vel + vel_jitter
+
+        min_dist = _min_pair_distance(pos)
+        if min_dist > best_min_dist:
+            best_min_dist = min_dist
+            best_pos = pos
+            best_vel = vel
+
+        if min_dist >= min_sep:
+            return pos, vel
+
+    return best_pos, best_vel
+
+
 @dataclass
 class SimulationState:
     positions: np.ndarray  # [3, D]
@@ -95,7 +142,13 @@ class NumpyThreeBodySimulator:
 
         fixed_state = _resolve_fixed_state(self.cfg, self.n, self.dim)
         if fixed_state is not None:
-            pos, vel = fixed_state
+            pos, vel = _apply_fixed_state_jitter(
+                cfg=self.cfg,
+                rng=self.rng,
+                base_pos=fixed_state[0],
+                base_vel=fixed_state[1],
+                collision_radius=float(self.cfg.collision_radius),
+            )
             self.positions = pos.copy()
             self.velocities = vel.copy()
             self.time = 0.0
@@ -302,7 +355,13 @@ class AmuseThreeBodySimulator:
             vel -= np.average(vel, axis=0)
             pos -= np.average(pos, axis=0)
         else:
-            pos, vel = fixed_state
+            pos, vel = _apply_fixed_state_jitter(
+                cfg=self.cfg,
+                rng=self.rng,
+                base_pos=fixed_state[0],
+                base_vel=fixed_state[1],
+                collision_radius=float(self.cfg.collision_radius),
+            )
 
         for i in range(self.n):
             parts[i].position = (pos[i, 0], pos[i, 1], 0.0) | self.units.AU

@@ -41,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--axis-pad", type=float, default=0.12)
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
     p.add_argument("--outdir", type=str, default="")
+    p.add_argument("--override-fixed-jitter-zero", action="store_true")
     return p.parse_args()
 
 
@@ -313,6 +314,10 @@ def main() -> None:
 
     cfg = EnvConfig(**ckpt["env_config"])
     rw = RewardWeights(**ckpt["reward_weights"])
+    if args.override_fixed_jitter_zero:
+        cfg.fixed_init_pos_jitter_std = 0.0
+        cfg.fixed_init_vel_jitter_std = 0.0
+        cfg.fixed_init_jitter_tries = 1
 
     obs_dim = cfg.num_bodies * cfg.dimensions * 2 + cfg.num_bodies + 2
     action_dim = cfg.num_bodies * cfg.dimensions

@@ -232,3 +232,31 @@ To compare both runs:
 - This code does not depend on `gym`; API is `reset()` / `step(action)`.
 - Action shape is `(3, 2)` (continuous acceleration for each body in 2D).
 - If you want full PPO training next, this environment is ready for it.
+
+## Planned Training Change (Directed Initialization)
+
+We are moving away from fully randomized initial states for training.
+
+New plan:
+
+1. Start from one fixed base initial condition (the directed setup).
+2. Add only small random perturbations around that base state:
+   - slight position jitter
+   - slight velocity jitter
+3. Keep perturbations intentionally small so the learning problem stays local and stable.
+4. Use this as the main training distribution for fixed-init convergence experiments.
+
+Rationale:
+
+- Gives a cleaner learning signal than global random starts.
+- Keeps task difficulty manageable.
+- Still adds enough variation to avoid brittle overfitting to one exact state.
+
+Current implementation status:
+
+- Implemented via fixed-init profile `near_ref` (see `fixed_init_profiles.py`).
+- Implemented local jitter around fixed init through:
+  - `fixed_init_pos_jitter_std`
+  - `fixed_init_vel_jitter_std`
+  - `fixed_init_jitter_tries`
+- Current fixed-init training defaults in `train_fixed_init_quick.py` use this directed setup.

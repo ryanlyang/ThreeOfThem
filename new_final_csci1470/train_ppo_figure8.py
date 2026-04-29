@@ -55,9 +55,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--escape-radius", type=float, default=4.0)
     p.add_argument("--init-min-pair-distance", type=float, default=0.25)
     p.add_argument("--backend", type=str, default="numpy", choices=["numpy", "amuse"])
-    p.add_argument("--fixed-init-profile", type=str, default="none", choices=["none", "weird"])
+    p.add_argument("--fixed-init-profile", type=str, default="none", choices=["none", "weird", "near_ref"])
     p.add_argument("--fixed-init-positions", type=str, default="")
     p.add_argument("--fixed-init-velocities", type=str, default="")
+    p.add_argument("--fixed-init-pos-jitter-std", type=float, default=0.0)
+    p.add_argument("--fixed-init-vel-jitter-std", type=float, default=0.0)
+    p.add_argument("--fixed-init-jitter-tries", type=int, default=32)
 
     # Reward weights.
     p.add_argument("--w-pos", type=float, default=1.0)
@@ -71,6 +74,12 @@ def parse_args() -> argparse.Namespace:
     # Eval/checkpointing.
     p.add_argument("--eval-every", type=int, default=6)
     p.add_argument("--eval-episodes", type=int, default=16)
+    p.add_argument("--eval-strict-mode", action="store_true")
+    p.add_argument("--eval-pos-threshold", type=float, default=0.08)
+    p.add_argument("--eval-vel-threshold", type=float, default=0.12)
+    p.add_argument("--eval-consecutive-converged", type=int, default=180)
+    p.add_argument("--eval-min-total-steps", type=int, default=220)
+    p.add_argument("--eval-lock-to-end", action="store_true")
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
     p.add_argument("--run-name", type=str, default="ppo_figure8")
@@ -97,6 +106,9 @@ def make_env_config(args: argparse.Namespace) -> EnvConfig:
         init_min_pair_distance=args.init_min_pair_distance,
         fixed_init_positions=fixed_pos,
         fixed_init_velocities=fixed_vel,
+        fixed_init_pos_jitter_std=args.fixed_init_pos_jitter_std,
+        fixed_init_vel_jitter_std=args.fixed_init_vel_jitter_std,
+        fixed_init_jitter_tries=args.fixed_init_jitter_tries,
     )
 
 
@@ -128,6 +140,12 @@ def evaluate_policy(
     eval_episodes: int,
     rng: np.random.Generator,
     device: torch.device,
+    strict_mode: bool,
+    pos_threshold: float,
+    vel_threshold: float,
+    consecutive_converged: int,
+    min_total_steps: int,
+    lock_to_end: bool,
 ) -> dict[str, float]:
     returns = []
     lengths = []
@@ -136,6 +154,9 @@ def evaluate_policy(
     failures = []
     final_pos_err = []
     final_vel_err = []
+    strict_success = []
+    max_streaks = []
+    end_streaks = []
 
     model.eval()
 
@@ -146,6 +167,10 @@ def evaluate_policy(
         ep_return = 0.0
         ep_len = 0
         info: dict[str, Any] = {}
+        converge_streak = 0
+        max_converge_streak = 0
+        converged_step = None
+        broke_after_lock = False
 
         while not done:
             obs_n = obs_rms.normalize(obs[None, :])
@@ -160,6 +185,30 @@ def evaluate_policy(
             ep_return += float(reward)
             ep_len += 1
 
+            pos_err = float(info.get("position_error", np.nan))
+            vel_err = float(info.get("velocity_direction_error", np.nan))
+            step_collided = bool(info.get("collided", False))
+            step_escaped = bool(info.get("escaped", False))
+
+            meets = (
+                np.isfinite(pos_err)
+                and np.isfinite(vel_err)
+                and (pos_err <= pos_threshold)
+                and (vel_err <= vel_threshold)
+                and (not step_collided)
+                and (not step_escaped)
+            )
+            if meets:
+                converge_streak += 1
+                max_converge_streak = max(max_converge_streak, converge_streak)
+            else:
+                if converged_step is not None:
+                    broke_after_lock = True
+                converge_streak = 0
+
+            if converged_step is None and converge_streak >= max(1, int(consecutive_converged)):
+                converged_step = (ep_len + 1) - int(consecutive_converged) + 1
+
         returns.append(ep_return)
         lengths.append(ep_len)
         collided = bool(info.get("collided", False))
@@ -167,8 +216,35 @@ def evaluate_policy(
         collisions.append(float(collided))
         escapes.append(float(escaped))
         failures.append(float(collided or escaped))
-        final_pos_err.append(float(info.get("position_error", np.nan)))
-        final_vel_err.append(float(info.get("velocity_direction_error", np.nan)))
+        f_pos = float(info.get("position_error", np.nan))
+        f_vel = float(info.get("velocity_direction_error", np.nan))
+        final_pos_err.append(f_pos)
+        final_vel_err.append(f_vel)
+
+        no_failure = not (collided or escaped)
+        final_under_threshold = (
+            np.isfinite(f_pos)
+            and np.isfinite(f_vel)
+            and (f_pos <= pos_threshold)
+            and (f_vel <= vel_threshold)
+        )
+        enough_steps = ep_len >= max(0, int(min_total_steps))
+        sustained_after_lock = (
+            (converged_step is not None)
+            and (not broke_after_lock)
+            and (converge_streak >= max(1, int(consecutive_converged)))
+        )
+        basic_success = converged_step is not None
+        if strict_mode:
+            ep_strict = basic_success and no_failure and final_under_threshold and enough_steps
+            if lock_to_end:
+                ep_strict = ep_strict and sustained_after_lock
+        else:
+            ep_strict = basic_success
+
+        strict_success.append(float(ep_strict))
+        max_streaks.append(float(max_converge_streak))
+        end_streaks.append(float(converge_streak))
 
     model.train()
 
@@ -181,6 +257,9 @@ def evaluate_policy(
         "eval_failure_rate": float(np.mean(failures)),
         "eval_final_pos_err": float(np.nanmean(final_pos_err)),
         "eval_final_vel_err": float(np.nanmean(final_vel_err)),
+        "eval_strict_success_rate": float(np.mean(strict_success)),
+        "eval_max_converge_streak_mean": float(np.mean(max_streaks)),
+        "eval_end_converge_streak_mean": float(np.mean(end_streaks)),
     }
 
 
@@ -272,7 +351,7 @@ def main() -> None:
     finished_lengths: list[int] = []
 
     best_eval = -np.inf
-    best_eval_key: tuple[float, float, float, float] | None = None
+    best_eval_key: tuple[float, ...] | None = None
     metrics_rows: list[dict[str, Any]] = []
 
     for update in range(1, args.updates + 1):
@@ -418,6 +497,9 @@ def main() -> None:
             "eval_failure_rate": np.nan,
             "eval_final_pos_err": np.nan,
             "eval_final_vel_err": np.nan,
+            "eval_strict_success_rate": np.nan,
+            "eval_max_converge_streak_mean": np.nan,
+            "eval_end_converge_streak_mean": np.nan,
         }
 
         if (update % args.eval_every == 0) or (update == args.updates):
@@ -429,6 +511,12 @@ def main() -> None:
                 eval_episodes=args.eval_episodes,
                 rng=rng,
                 device=device,
+                strict_mode=args.eval_strict_mode,
+                pos_threshold=args.eval_pos_threshold,
+                vel_threshold=args.eval_vel_threshold,
+                consecutive_converged=args.eval_consecutive_converged,
+                min_total_steps=args.eval_min_total_steps,
+                lock_to_end=args.eval_lock_to_end,
             )
             row.update(eval_stats)
 
@@ -447,12 +535,22 @@ def main() -> None:
 
             if eval_stats["eval_return_mean"] > best_eval:
                 best_eval = eval_stats["eval_return_mean"]
-            eval_key = (
-                float(eval_stats["eval_failure_rate"]),
-                float(eval_stats["eval_final_pos_err"]),
-                float(eval_stats["eval_final_vel_err"]),
-                -float(eval_stats["eval_return_mean"]),
-            )
+            if args.eval_strict_mode:
+                eval_key = (
+                    1.0 - float(eval_stats["eval_strict_success_rate"]),
+                    float(eval_stats["eval_failure_rate"]),
+                    -float(eval_stats["eval_end_converge_streak_mean"]),
+                    float(eval_stats["eval_final_pos_err"]),
+                    float(eval_stats["eval_final_vel_err"]),
+                    -float(eval_stats["eval_return_mean"]),
+                )
+            else:
+                eval_key = (
+                    float(eval_stats["eval_failure_rate"]),
+                    float(eval_stats["eval_final_pos_err"]),
+                    float(eval_stats["eval_final_vel_err"]),
+                    -float(eval_stats["eval_return_mean"]),
+                )
             if (best_eval_key is None) or (eval_key < best_eval_key):
                 best_eval_key = eval_key
                 torch.save(ckpt, run_dir / "checkpoint_best.pt")
@@ -463,7 +561,8 @@ def main() -> None:
             f"[update {update:04d}] "
             f"train_return_mean={row['train_return_mean']:.3f} "
             f"eval_return_mean={row['eval_return_mean']:.3f} "
-            f"eval_collision_rate={row['eval_collision_rate']:.3f}"
+            f"eval_collision_rate={row['eval_collision_rate']:.3f} "
+            f"eval_strict_success_rate={row['eval_strict_success_rate']:.3f}"
         )
 
         write_metrics_csv(run_dir / "metrics.csv", metrics_rows)
@@ -472,11 +571,7 @@ def main() -> None:
 
     print(f"[done] best_eval_return={best_eval:.3f}")
     if best_eval_key is not None:
-        print(
-            "[done] best_eval_key="
-            f"(failure={best_eval_key[0]:.3f}, pos={best_eval_key[1]:.6f}, "
-            f"vel={best_eval_key[2]:.6f}, -return={best_eval_key[3]:.3f})"
-        )
+        print(f"[done] best_eval_key={best_eval_key}")
     print(f"[done] artifacts at: {run_dir}")
 
 

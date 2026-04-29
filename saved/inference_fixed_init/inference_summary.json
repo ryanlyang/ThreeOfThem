@@ -1,0 +1,134 @@
+{
+  "checkpoint": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/fixedinit_quick_fixedinit_20260428_202253_20260428_202318/checkpoint_best.pt",
+  "device": "cuda",
+  "num_setups": 1,
+  "setup_seeds": [
+    2103139804
+  ],
+  "policy": "deterministic",
+  "thresholds": {
+    "pos": 0.08,
+    "vel": 0.12
+  },
+  "consecutive_converged": 180,
+  "strict_criteria": {
+    "strict_mode": true,
+    "lock_to_end": true,
+    "require_no_failure": true,
+    "require_final_threshold": true,
+    "min_total_steps_for_converged": 220
+  },
+  "best_index": 0,
+  "best_seed": 2103139804,
+  "best_rank_tuple": [
+    1,
+    0,
+    261,
+    -11,
+    0.6019964312628515,
+    0.9481592662780397,
+    0.046670540183034355,
+    1
+  ],
+  "best_gif": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/fixedinit_quick_fixedinit_20260428_202253_20260428_202318/inference_fixed_init/best_convergence_seed_2103139804.gif",
+  "runs": [
+    {
+      "setup_seed": 2103139804,
+      "steps": 260,
+      "collided": false,
+      "escaped": false,
+      "converged_step": null,
+      "basic_converged": false,
+      "strict_converged": false,
+      "max_converge_streak": 11,
+      "end_converge_streak": 0,
+      "sustained_after_lock": false,
+      "final_under_threshold": false,
+      "no_failure": true,
+      "enough_total_steps": true,
+      "min_pos_err": 0.046670540183034355,
+      "min_pos_step": 1,
+      "final_pos_err": 0.6019964312628515,
+      "final_vel_err": 0.9481592662780397,
+      "return_sum": -197.36727689189843,
+      "rank_tuple": [
+        1,
+        0,
+        261,
+        -11,
+        0.6019964312628515,
+        0.9481592662780397,
+        0.046670540183034355,
+        1
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/artifacts/fixedinit_quick_fixedinit_20260428_202253_20260428_202318/inference_fixed_init/setup_00_seed_2103139804.gif"
+    }
+  ],
+  "env_config": {
+    "num_bodies": 3,
+    "dimensions": 2,
+    "gravitational_constant": 1.0,
+    "mass_each": 1.0,
+    "action_dt": 0.05,
+    "integrator_dt": 0.001,
+    "horizon_steps": 260,
+    "max_action_norm": 0.22,
+    "collision_radius": 0.06,
+    "escape_radius": 4.0,
+    "init_radius_min": 0.15,
+    "init_radius_max": 1.3,
+    "init_speed_scale": 0.35,
+    "init_min_pair_distance": 0.25,
+    "init_sample_tries": 256,
+    "fixed_init_positions": [
+      [
+        0.504745,
+        -0.379373
+      ],
+      [
+        -1.216997,
+        0.068041
+      ],
+      [
+        0.842252,
+        0.131331
+      ]
+    ],
+    "fixed_init_velocities": [
+      [
+        -0.995967,
+        0.588732
+      ],
+      [
+        0.094886,
+        -0.407093
+      ],
+      [
+        0.951081,
+        -0.231639
+      ]
+    ],
+    "reference_period": 6.32591398,
+    "reference_samples": 900,
+    "phase_offsets_fraction": [
+      0.0,
+      0.3333333333333333,
+      0.6666666666666666
+    ],
+    "phase_search_radius": 25,
+    "expected_phase_stride_override": null,
+    "backend": "numpy",
+    "integrator_name": "Hermite",
+    "seed": 4301
+  },
+  "reward_weights": {
+    "position": 1.0,
+    "velocity_direction": 0.35,
+    "fuel": 0.03,
+    "collision": 100.0,
+    "escape": 4.0,
+    "permutation_switch": 0.15,
+    "phase_jump": 0.01,
+    "out_of_plane": 0.0
+  }
+}

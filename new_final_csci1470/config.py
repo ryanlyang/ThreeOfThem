@@ -40,6 +40,10 @@ class EnvConfig:
     fixed_init_velocities: Optional[
         tuple[tuple[float, float], tuple[float, float], tuple[float, float]]
     ] = None
+    # Optional local randomization around fixed_init_* for directed training.
+    fixed_init_pos_jitter_std: float = 0.0
+    fixed_init_vel_jitter_std: float = 0.0
+    fixed_init_jitter_tries: int = 32
 
     reference_period: float = 6.32591398
     reference_samples: int = 900

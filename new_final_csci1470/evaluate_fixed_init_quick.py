@@ -13,17 +13,18 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--checkpoint", type=str, required=True)
     p.add_argument("--episodes", type=int, default=12)
     p.add_argument("--num-setups", type=int, default=1)
-    p.add_argument("--max-steps", type=int, default=260)
+    p.add_argument("--max-steps", type=int, default=360)
     p.add_argument("--pos-threshold", type=float, default=0.08)
     p.add_argument("--vel-threshold", type=float, default=0.12)
-    p.add_argument("--consecutive-converged", type=int, default=180)
-    p.add_argument("--min-total-steps-for-converged", type=int, default=220)
+    p.add_argument("--consecutive-converged", type=int, default=240)
+    p.add_argument("--min-total-steps-for-converged", type=int, default=300)
     p.add_argument("--trail-len", type=int, default=70)
     p.add_argument("--frame-stride", type=int, default=1)
     p.add_argument("--axis-pad", type=float, default=0.20)
     p.add_argument("--seed", type=int, default=1234)
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
     p.add_argument("--outdir", type=str, default="")
+    p.add_argument("--override-fixed-jitter-zero", action="store_true", default=True)
     return p.parse_args()
 
 
@@ -84,6 +85,8 @@ def main() -> None:
         "--outdir",
         str(outdir),
     ]
+    if args.override_fixed_jitter_zero:
+        infer_cmd.append("--override-fixed-jitter-zero")
 
     print("Running evaluation:", flush=True)
     print(" ".join(eval_cmd), flush=True)
