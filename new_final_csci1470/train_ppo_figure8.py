@@ -59,6 +59,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--integrator-dt", type=float, default=0.001)
     p.add_argument("--phase-search-radius", type=int, default=25)
     p.add_argument("--max-action-norm", type=float, default=0.30)
+    p.add_argument("--near-collision-distance", type=float, default=0.35)
     p.add_argument("--escape-radius", type=float, default=4.0)
     p.add_argument("--init-min-pair-distance", type=float, default=0.25)
     p.add_argument("--backend", type=str, default="numpy", choices=["numpy", "amuse"])
@@ -73,6 +74,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--w-pos", type=float, default=1.0)
     p.add_argument("--w-vel", type=float, default=0.35)
     p.add_argument("--w-fuel", type=float, default=0.03)
+    p.add_argument("--w-near-collision", type=float, default=0.0)
     p.add_argument("--w-collision", type=float, default=60.0)
     p.add_argument("--w-escape", type=float, default=2.0)
     p.add_argument("--w-switch", type=float, default=0.15)
@@ -110,6 +112,7 @@ def make_env_config(args: argparse.Namespace) -> EnvConfig:
         integrator_dt=args.integrator_dt,
         phase_search_radius=args.phase_search_radius,
         max_action_norm=args.max_action_norm,
+        near_collision_distance=args.near_collision_distance,
         escape_radius=args.escape_radius,
         init_min_pair_distance=args.init_min_pair_distance,
         fixed_init_positions=fixed_pos,
@@ -125,6 +128,7 @@ def make_reward_weights(args: argparse.Namespace) -> RewardWeights:
         position=args.w_pos,
         velocity_direction=args.w_vel,
         fuel=args.w_fuel,
+        near_collision=args.w_near_collision,
         collision=args.w_collision,
         escape=args.w_escape,
         permutation_switch=args.w_switch,

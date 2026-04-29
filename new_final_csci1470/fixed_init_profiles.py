@@ -19,17 +19,18 @@ WEIRD_FIXED_VELOCITIES_2D: tuple[tuple[float, float], tuple[float, float], tuple
 )
 
 
-# Directed near-reference profile for easier fixed-init convergence.
+# Directed near-reference profile for easier fixed-init convergence. These
+# values are an exact phase-aligned Figure-8 state from reference_orbit.py.
 NEAR_REF_FIXED_POSITIONS_2D: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = (
-    (-0.83956791, 0.32390607),
-    (-0.08033380, 0.08822763),
-    (0.83990170, -0.31213373),
+    (-0.97956791, 0.23390607),
+    (0.01966620, 0.01822763),
+    (0.95990170, -0.25213373),
 )
 
 NEAR_REF_FIXED_VELOCITIES_2D: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = (
-    (-0.34099955, -0.49833147),
-    (0.81313223, 0.94381656),
-    (-0.41213266, -0.46548510),
+    (-0.44099955, -0.43833147),
+    (0.93313223, 0.86381656),
+    (-0.49213266, -0.42548510),
 )
 
 

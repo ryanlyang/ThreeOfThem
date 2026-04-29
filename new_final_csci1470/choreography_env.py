@@ -210,6 +210,12 @@ class Figure8ChoreographyEnv:
         action_sq = np.sum(action**2, axis=1)
         fuel_cost = float(np.mean(action_sq) / (self.cfg.max_action_norm**2 + 1e-12))
 
+        min_pair_distance = float(sim_info.get("min_pair_distance", np.inf))
+        near_collision_margin = max(float(self.cfg.near_collision_distance), 2.0 * float(self.cfg.collision_radius))
+        near_collision_cost = 0.0
+        if np.isfinite(min_pair_distance) and near_collision_margin > 0.0:
+            near_collision_cost = max(0.0, (near_collision_margin - min_pair_distance) / near_collision_margin) ** 2
+
         collision_cost = 1.0 if collided else 0.0
         max_radius = float(np.max(np.linalg.norm(state.positions, axis=1)))
         escaped = bool(max_radius > self.cfg.escape_radius)
@@ -219,6 +225,7 @@ class Figure8ChoreographyEnv:
             self.w.position * match.position_error
             + self.w.velocity_direction * match.velocity_direction_error
             + self.w.fuel * fuel_cost
+            + self.w.near_collision * near_collision_cost
             + self.w.collision * collision_cost
             + self.w.escape * escape_cost
             + self.w.permutation_switch * match.switch_cost
@@ -240,12 +247,13 @@ class Figure8ChoreographyEnv:
             "switch_cost": match.switch_cost,
             "phase_jump_cost": match.phase_jump_cost,
             "fuel_cost": fuel_cost,
+            "near_collision_cost": near_collision_cost,
             "collision_cost": collision_cost,
             "escape_cost": escape_cost,
             "collided": collided,
             "escaped": escaped,
             "max_radius": max_radius,
-            "min_pair_distance": sim_info.get("min_pair_distance", np.nan),
+            "min_pair_distance": min_pair_distance,
             "energy": sim_info.get("energy", np.nan),
             "sim_time": state.time,
         }

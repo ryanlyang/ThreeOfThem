@@ -7,6 +7,7 @@ class RewardWeights:
     position: float = 1.0
     velocity_direction: float = 0.35
     fuel: float = 0.03
+    near_collision: float = 0.0
     collision: float = 60.0
     escape: float = 2.0
     permutation_switch: float = 0.15
@@ -27,6 +28,7 @@ class EnvConfig:
 
     max_action_norm: float = 0.30
     collision_radius: float = 0.06
+    near_collision_distance: float = 0.35
     escape_radius: float = 4.0
 
     init_radius_min: float = 0.15
