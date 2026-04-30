@@ -59,9 +59,11 @@ FIXED_INIT_VEL_JITTER_STD="${FIXED_INIT_VEL_JITTER_STD:-0.006}"
 FIXED_INIT_JITTER_TRIES="${FIXED_INIT_JITTER_TRIES:-64}"
 HORIZON_STEPS="${HORIZON_STEPS:-360}"
 ENT_COEF="${ENT_COEF:-0.0005}"
+INITIAL_LOG_STD="${INITIAL_LOG_STD:--1.2}"
 REWARD_SCALE="${REWARD_SCALE:-600.0}"
 MAX_ACTION_NORM="${MAX_ACTION_NORM:-0.16}"
 NEAR_COLLISION_DISTANCE="${NEAR_COLLISION_DISTANCE:-0.35}"
+ESCAPE_RADIUS="${ESCAPE_RADIUS:-4.0}"
 W_POS="${W_POS:-1.20}"
 W_VEL="${W_VEL:-0.90}"
 W_FUEL="${W_FUEL:-0.05}"
@@ -98,9 +100,11 @@ python train_fixed_init_quick.py \
   --fixed-init-jitter-tries "$FIXED_INIT_JITTER_TRIES" \
   --horizon-steps "$HORIZON_STEPS" \
   --ent-coef "$ENT_COEF" \
+  --initial-log-std "$INITIAL_LOG_STD" \
   --reward-scale "$REWARD_SCALE" \
   --max-action-norm "$MAX_ACTION_NORM" \
   --near-collision-distance "$NEAR_COLLISION_DISTANCE" \
+  --escape-radius "$ESCAPE_RADIUS" \
   --w-pos "$W_POS" \
   --w-vel "$W_VEL" \
   --w-fuel "$W_FUEL" \

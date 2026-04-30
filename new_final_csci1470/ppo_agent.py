@@ -61,7 +61,7 @@ class RunningMeanStd:
 
 
 class ActorCritic(nn.Module):
-    def __init__(self, obs_dim: int, action_dim: int, hidden_size: int = 256):
+    def __init__(self, obs_dim: int, action_dim: int, hidden_size: int = 256, initial_log_std: float = -1.2):
         super().__init__()
 
         self.backbone = nn.Sequential(
@@ -74,7 +74,7 @@ class ActorCritic(nn.Module):
         self.policy_head = nn.Linear(hidden_size, action_dim)
         self.value_head = nn.Linear(hidden_size, 1)
         # Lower initial exploration helps avoid early full-thrust saturation.
-        self.log_std = nn.Parameter(torch.full((action_dim,), -1.2))
+        self.log_std = nn.Parameter(torch.full((action_dim,), float(initial_log_std)))
 
         self._init_weights()
 

@@ -45,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--clip-coef", type=float, default=0.2)
     p.add_argument("--vf-coef", type=float, default=0.5)
     p.add_argument("--ent-coef", type=float, default=0.005)
+    p.add_argument("--initial-log-std", type=float, default=-1.2)
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--max-grad-norm", type=float, default=0.5)
 
@@ -407,7 +408,7 @@ def main() -> None:
 
     obs_rms = RunningMeanStd(shape=(obs_dim,))
 
-    model = ActorCritic(obs_dim=obs_dim, action_dim=action_dim).to(device)
+    model = ActorCritic(obs_dim=obs_dim, action_dim=action_dim, initial_log_std=args.initial_log_std).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, eps=1e-5)
 
     if args.vec_env == "subproc":
