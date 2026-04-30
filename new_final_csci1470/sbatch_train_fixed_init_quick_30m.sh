@@ -2,6 +2,7 @@
 #SBATCH --job-name=csci1470_fixedinit_train
 #SBATCH --partition=debug
 #SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=16
 #SBATCH --mem=32G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
@@ -39,6 +40,12 @@ python -m pip install --cache-dir "$PIP_CACHE_DIR" -r requirements-train.txt
 which python
 python --version
 nvidia-smi || true
+
+# Keep BLAS/OpenMP thread pools from oversubscribing the env worker processes.
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
 
 RUN_NAME="${RUN_NAME:-fixedinit_quick_${PIPE_TAG}}"
 UPDATES="${UPDATES:-900}"

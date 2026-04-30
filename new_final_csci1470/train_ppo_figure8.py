@@ -396,8 +396,8 @@ def main() -> None:
     with (run_dir / "reward_weights.json").open("w") as f:
         json.dump(asdict(rw), f, indent=2)
 
-    print(f"[train] device={device}")
-    print(f"[train] run_dir={run_dir}")
+    print(f"[train] device={device}", flush=True)
+    print(f"[train] run_dir={run_dir}", flush=True)
 
     probe_env = Figure8ChoreographyEnv(config=cfg, weights=rw)
     obs_dim = probe_env.observation_dim
@@ -645,7 +645,8 @@ def main() -> None:
             f"train_return_mean={row['train_return_mean']:.3f} "
             f"eval_return_mean={row['eval_return_mean']:.3f} "
             f"eval_collision_rate={row['eval_collision_rate']:.3f} "
-            f"eval_strict_success_rate={row['eval_strict_success_rate']:.3f}"
+            f"eval_strict_success_rate={row['eval_strict_success_rate']:.3f}",
+            flush=True,
         )
 
         write_metrics_csv(run_dir / "metrics.csv", metrics_rows)
@@ -653,10 +654,10 @@ def main() -> None:
     envs.close()
     maybe_plot_metrics(run_dir / "metrics.png", metrics_rows)
 
-    print(f"[done] best_eval_return={best_eval:.3f}")
+    print(f"[done] best_eval_return={best_eval:.3f}", flush=True)
     if best_eval_key is not None:
-        print(f"[done] best_eval_key={best_eval_key}")
-    print(f"[done] artifacts at: {run_dir}")
+        print(f"[done] best_eval_key={best_eval_key}", flush=True)
+    print(f"[done] artifacts at: {run_dir}", flush=True)
 
 
 if __name__ == "__main__":
