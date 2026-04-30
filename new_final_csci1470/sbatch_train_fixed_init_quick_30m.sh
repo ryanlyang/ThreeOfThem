@@ -47,6 +47,8 @@ export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
 export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
 export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
 export PYTHONUNBUFFERED=1
+export MPLCONFIGDIR="${MPLCONFIGDIR:-$PWD/.mpl_cache}"
+mkdir -p "$MPLCONFIGDIR"
 
 RUN_NAME="${RUN_NAME:-fixedinit_quick_${PIPE_TAG}}"
 UPDATES="${UPDATES:-900}"
@@ -85,6 +87,16 @@ EVAL_VEL_THRESHOLD_TRAIN="${EVAL_VEL_THRESHOLD_TRAIN:-0.12}"
 EVAL_CONSECUTIVE_CONVERGED_TRAIN="${EVAL_CONSECUTIVE_CONVERGED_TRAIN:-180}"
 EVAL_MIN_TOTAL_STEPS_TRAIN="${EVAL_MIN_TOTAL_STEPS_TRAIN:-220}"
 SAVE_TOPK="${SAVE_TOPK:-3}"
+EARLY_STOP_ON_STRICT_SUCCESS="${EARLY_STOP_ON_STRICT_SUCCESS:-0}"
+EARLY_STOP_SUCCESS_RATE="${EARLY_STOP_SUCCESS_RATE:-1.0}"
+EARLY_STOP_MAX_FAILURE_RATE="${EARLY_STOP_MAX_FAILURE_RATE:-0.0}"
+EARLY_STOP_PATIENCE_EVALS="${EARLY_STOP_PATIENCE_EVALS:-1}"
+EARLY_STOP_MIN_EVALS="${EARLY_STOP_MIN_EVALS:-1}"
+
+EARLY_STOP_FLAG=""
+if [[ "$EARLY_STOP_ON_STRICT_SUCCESS" == "1" ]]; then
+  EARLY_STOP_FLAG="--early-stop-on-strict-success"
+fi
 
 python train_fixed_init_quick.py \
   --updates "$UPDATES" \
@@ -125,7 +137,12 @@ python train_fixed_init_quick.py \
   --eval-vel-threshold "$EVAL_VEL_THRESHOLD_TRAIN" \
   --eval-consecutive-converged "$EVAL_CONSECUTIVE_CONVERGED_TRAIN" \
   --eval-min-total-steps "$EVAL_MIN_TOTAL_STEPS_TRAIN" \
-  --save-topk "$SAVE_TOPK"
+  --save-topk "$SAVE_TOPK" \
+  --early-stop-success-rate "$EARLY_STOP_SUCCESS_RATE" \
+  --early-stop-max-failure-rate "$EARLY_STOP_MAX_FAILURE_RATE" \
+  --early-stop-patience-evals "$EARLY_STOP_PATIENCE_EVALS" \
+  --early-stop-min-evals "$EARLY_STOP_MIN_EVALS" \
+  $EARLY_STOP_FLAG
 
 RUN_DIR=$(ls -dt "$PWD"/artifacts/${RUN_NAME}_* | head -n1)
 echo "$RUN_DIR" > "$PIPE_DIR/train_run_dir.txt"

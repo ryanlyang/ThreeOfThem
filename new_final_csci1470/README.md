@@ -35,6 +35,10 @@ This project implements the setup we discussed, from scratch, in a clean standal
 - `queue_train_then_infer.sh`: submits both jobs with dependency (`afterok`).
 - `queue_train_then_infer_alt_hparams.sh`: same dependency pipeline with alternate reward/PPO hyperparameters.
 - `run_inference_best_gif.py`: evaluates a few setups and writes the best-convergence rollout GIF.
+- `mpc_ilqr.py`: standalone iLQR planner for receding-horizon Figure-8 tracking.
+- `run_mpc_ilqr_fixed_init.py`: MPC/iLQR runner with strict convergence checks and GIF outputs.
+- `sbatch_mpc_ilqr_fixed_init.sh`: SLURM entrypoint for the MPC/iLQR fixed-init run.
+- `queue_mpc_ilqr_fixed_init.sh`: one-command tier3 submission for MPC/iLQR.
 
 ## Direction Convention
 
@@ -226,6 +230,33 @@ To compare both runs:
 2. Submit alternate pipeline:
 `bash queue_train_then_infer_alt_hparams.sh`
 3. Compare their `metrics.csv`, `checkpoint_best.pt`, and `inference_best_gif/inference_summary.json` under each run directory.
+
+## MPC/iLQR Fixed-Init Path (Additive To PPO)
+
+This path does not modify or disable PPO training scripts. It is a separate deterministic controller path for fixed-init convergence.
+
+Local run:
+
+```bash
+python run_mpc_ilqr_fixed_init.py \
+  --fixed-init-profile offset_ref \
+  --fixed-init-pos-jitter-std 0.0 \
+  --fixed-init-vel-jitter-std 0.0 \
+  --num-setups 10 \
+  --max-steps 420
+```
+
+Tier3 one-command run:
+
+```bash
+bash queue_mpc_ilqr_fixed_init.sh
+```
+
+Outputs:
+
+- `inference_mpc_ilqr_fixed_init_<PIPE_TAG>/setup_00_seed_<seed>.gif` (one GIF per setup)
+- `inference_mpc_ilqr_fixed_init_<PIPE_TAG>/best_convergence_seed_<seed>.gif`
+- `inference_mpc_ilqr_fixed_init_<PIPE_TAG>/inference_summary.json`
 
 ## Notes
 

@@ -91,6 +91,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval-min-total-steps", type=int, default=220)
     p.add_argument("--eval-lock-to-end", action="store_true")
     p.add_argument("--save-topk", type=int, default=1)
+    p.add_argument("--early-stop-on-strict-success", action="store_true")
+    p.add_argument("--early-stop-success-rate", type=float, default=1.0)
+    p.add_argument("--early-stop-max-failure-rate", type=float, default=0.0)
+    p.add_argument("--early-stop-patience-evals", type=int, default=1)
+    p.add_argument("--early-stop-min-evals", type=int, default=1)
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
     p.add_argument("--run-name", type=str, default="ppo_figure8")
@@ -456,8 +461,14 @@ def main() -> None:
     topk_entries: list[dict[str, Any]] = []
     metrics_rows: list[dict[str, Any]] = []
     train_start_time = time.time()
+    eval_count = 0
+    early_stop_hits = 0
+    stopped_early = False
+    stop_reason = ""
+    completed_updates = 0
 
     for update in range(1, args.updates + 1):
+        completed_updates = update
         # Rollout buffers [T, N, ...]
         obs_buf = np.zeros((args.rollout_steps, args.num_envs, obs_dim), dtype=np.float32)
         act_buf = np.zeros((args.rollout_steps, args.num_envs, action_dim), dtype=np.float32)
@@ -597,6 +608,7 @@ def main() -> None:
             "eval_end_converge_streak_mean": np.nan,
         }
 
+        break_after_update = False
         if (update % args.eval_every == 0) or (update == args.updates):
             eval_stats = evaluate_policy(
                 model=model,
@@ -614,6 +626,7 @@ def main() -> None:
                 lock_to_end=args.eval_lock_to_end,
             )
             row.update(eval_stats)
+            eval_count += 1
 
             ckpt = {
                 "model_state": model.state_dict(),
@@ -657,6 +670,39 @@ def main() -> None:
             if changed and len(topk_entries) > 0:
                 best_eval_key = tuple(topk_entries[0]["eval_key"])
 
+            print(
+                f"[eval] update={update:04d} "
+                f"return_mean={eval_stats['eval_return_mean']:.3f} "
+                f"failure_rate={eval_stats['eval_failure_rate']:.3f} "
+                f"strict_success_rate={eval_stats['eval_strict_success_rate']:.3f} "
+                f"final_pos_err={eval_stats['eval_final_pos_err']:.5f} "
+                f"final_vel_err={eval_stats['eval_final_vel_err']:.5f}",
+                flush=True,
+            )
+
+            if args.early_stop_on_strict_success and args.eval_strict_mode:
+                meets = (
+                    float(eval_stats["eval_strict_success_rate"]) >= float(args.early_stop_success_rate)
+                    and float(eval_stats["eval_failure_rate"]) <= float(args.early_stop_max_failure_rate)
+                )
+                if meets:
+                    early_stop_hits += 1
+                else:
+                    early_stop_hits = 0
+
+                if (eval_count >= max(1, int(args.early_stop_min_evals))) and (
+                    early_stop_hits >= max(1, int(args.early_stop_patience_evals))
+                ):
+                    stopped_early = True
+                    stop_reason = (
+                        "strict success target reached: "
+                        f"success_rate={eval_stats['eval_strict_success_rate']:.3f} "
+                        f"failure_rate={eval_stats['eval_failure_rate']:.3f} "
+                        f"for {early_stop_hits} eval(s)"
+                    )
+                    print(f"[early-stop] {stop_reason}", flush=True)
+                    break_after_update = True
+
         metrics_rows.append(row)
 
         elapsed = time.time() - train_start_time
@@ -676,10 +722,17 @@ def main() -> None:
         )
 
         write_metrics_csv(run_dir / "metrics.csv", metrics_rows)
+        if break_after_update:
+            break
 
     envs.close()
     maybe_plot_metrics(run_dir / "metrics.png", metrics_rows)
 
+    print(f"[done] completed_updates={completed_updates}/{args.updates}", flush=True)
+    if stopped_early:
+        print(f"[done] stopped_early=True reason={stop_reason}", flush=True)
+    else:
+        print("[done] stopped_early=False", flush=True)
     print(f"[done] best_eval_return={best_eval:.3f}", flush=True)
     if best_eval_key is not None:
         print(f"[done] best_eval_key={best_eval_key}", flush=True)
