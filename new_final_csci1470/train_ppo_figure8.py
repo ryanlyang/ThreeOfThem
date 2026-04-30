@@ -145,6 +145,24 @@ def choose_device(device_arg: str) -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+def format_duration(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    hours, rem = divmod(seconds, 3600)
+    minutes, secs = divmod(rem, 60)
+    if hours > 0:
+        return f"{hours:d}h{minutes:02d}m"
+    if minutes > 0:
+        return f"{minutes:d}m{secs:02d}s"
+    return f"{secs:d}s"
+
+
+def progress_bar(update: int, total: int, width: int = 28) -> str:
+    total = max(1, int(total))
+    frac = min(1.0, max(0.0, float(update) / float(total)))
+    filled = int(round(width * frac))
+    return "[" + "#" * filled + "-" * (width - filled) + "]"
+
+
 def evaluate_policy(
     model: ActorCritic,
     obs_rms: RunningMeanStd,
@@ -437,6 +455,7 @@ def main() -> None:
     topk_limit = max(1, int(args.save_topk))
     topk_entries: list[dict[str, Any]] = []
     metrics_rows: list[dict[str, Any]] = []
+    train_start_time = time.time()
 
     for update in range(1, args.updates + 1):
         # Rollout buffers [T, N, ...]
@@ -640,8 +659,15 @@ def main() -> None:
 
         metrics_rows.append(row)
 
+        elapsed = time.time() - train_start_time
+        eta = (elapsed / max(1, update)) * max(0, args.updates - update)
+        pct = 100.0 * float(update) / float(max(1, args.updates))
         print(
-            f"[update {update:04d}] "
+            f"{progress_bar(update, args.updates)} "
+            f"{pct:6.2f}% "
+            f"update={update:04d}/{args.updates:04d} "
+            f"elapsed={format_duration(elapsed)} "
+            f"eta={format_duration(eta)} "
             f"train_return_mean={row['train_return_mean']:.3f} "
             f"eval_return_mean={row['eval_return_mean']:.3f} "
             f"eval_collision_rate={row['eval_collision_rate']:.3f} "
