@@ -49,12 +49,32 @@ MINIBATCH_SIZE="${MINIBATCH_SIZE:-256}"
 EVAL_EVERY="${EVAL_EVERY:-15}"
 EVAL_EPISODES="${EVAL_EPISODES:-12}"
 SEED="${SEED:-4301}"
+VEC_ENV="${VEC_ENV:-subproc}"
+MP_START_METHOD="${MP_START_METHOD:-spawn}"
 FIXED_INIT_PROFILE="${FIXED_INIT_PROFILE:-near_ref}"
 FIXED_INIT_POSITIONS="${FIXED_INIT_POSITIONS:-}"
 FIXED_INIT_VELOCITIES="${FIXED_INIT_VELOCITIES:-}"
 FIXED_INIT_POS_JITTER_STD="${FIXED_INIT_POS_JITTER_STD:-0.008}"
 FIXED_INIT_VEL_JITTER_STD="${FIXED_INIT_VEL_JITTER_STD:-0.006}"
 FIXED_INIT_JITTER_TRIES="${FIXED_INIT_JITTER_TRIES:-64}"
+HORIZON_STEPS="${HORIZON_STEPS:-360}"
+ENT_COEF="${ENT_COEF:-0.0005}"
+REWARD_SCALE="${REWARD_SCALE:-600.0}"
+MAX_ACTION_NORM="${MAX_ACTION_NORM:-0.16}"
+NEAR_COLLISION_DISTANCE="${NEAR_COLLISION_DISTANCE:-0.35}"
+W_POS="${W_POS:-1.20}"
+W_VEL="${W_VEL:-0.90}"
+W_FUEL="${W_FUEL:-0.05}"
+W_NEAR_COLLISION="${W_NEAR_COLLISION:-8.0}"
+W_COLLISION="${W_COLLISION:-150.0}"
+W_ESCAPE="${W_ESCAPE:-8.0}"
+W_SWITCH="${W_SWITCH:-0.35}"
+W_PHASE="${W_PHASE:-0.08}"
+EVAL_POS_THRESHOLD_TRAIN="${EVAL_POS_THRESHOLD_TRAIN:-0.08}"
+EVAL_VEL_THRESHOLD_TRAIN="${EVAL_VEL_THRESHOLD_TRAIN:-0.12}"
+EVAL_CONSECUTIVE_CONVERGED_TRAIN="${EVAL_CONSECUTIVE_CONVERGED_TRAIN:-180}"
+EVAL_MIN_TOTAL_STEPS_TRAIN="${EVAL_MIN_TOTAL_STEPS_TRAIN:-220}"
+SAVE_TOPK="${SAVE_TOPK:-3}"
 
 python train_fixed_init_quick.py \
   --updates "$UPDATES" \
@@ -68,12 +88,32 @@ python train_fixed_init_quick.py \
   --run-name "$RUN_NAME" \
   --save-dir artifacts \
   --device auto \
+  --vec-env "$VEC_ENV" \
+  --mp-start-method "$MP_START_METHOD" \
   --fixed-init-profile "$FIXED_INIT_PROFILE" \
   --fixed-init-positions "$FIXED_INIT_POSITIONS" \
   --fixed-init-velocities "$FIXED_INIT_VELOCITIES" \
   --fixed-init-pos-jitter-std "$FIXED_INIT_POS_JITTER_STD" \
   --fixed-init-vel-jitter-std "$FIXED_INIT_VEL_JITTER_STD" \
-  --fixed-init-jitter-tries "$FIXED_INIT_JITTER_TRIES"
+  --fixed-init-jitter-tries "$FIXED_INIT_JITTER_TRIES" \
+  --horizon-steps "$HORIZON_STEPS" \
+  --ent-coef "$ENT_COEF" \
+  --reward-scale "$REWARD_SCALE" \
+  --max-action-norm "$MAX_ACTION_NORM" \
+  --near-collision-distance "$NEAR_COLLISION_DISTANCE" \
+  --w-pos "$W_POS" \
+  --w-vel "$W_VEL" \
+  --w-fuel "$W_FUEL" \
+  --w-near-collision "$W_NEAR_COLLISION" \
+  --w-collision "$W_COLLISION" \
+  --w-escape "$W_ESCAPE" \
+  --w-switch "$W_SWITCH" \
+  --w-phase "$W_PHASE" \
+  --eval-pos-threshold "$EVAL_POS_THRESHOLD_TRAIN" \
+  --eval-vel-threshold "$EVAL_VEL_THRESHOLD_TRAIN" \
+  --eval-consecutive-converged "$EVAL_CONSECUTIVE_CONVERGED_TRAIN" \
+  --eval-min-total-steps "$EVAL_MIN_TOTAL_STEPS_TRAIN" \
+  --save-topk "$SAVE_TOPK"
 
 RUN_DIR=$(ls -dt "$PWD"/artifacts/${RUN_NAME}_* | head -n1)
 echo "$RUN_DIR" > "$PIPE_DIR/train_run_dir.txt"
