@@ -10,7 +10,7 @@ PIPE_TAG="${PIPE_TAG:-mpc_ilqr_trueconv_harder3_$(date +%Y%m%d_%H%M%S)}"
 echo "Submitting MPC/iLQR harder true-convergence run (3 jitter setups) with PIPE_TAG=$PIPE_TAG"
 JOB_ID=$(
   sbatch --parsable \
-    --partition=tier3 \
+    --partition=debug \
     --time=02:00:00 \
     --cpus-per-task=8 \
     --mem=32G \
