@@ -49,6 +49,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--target-policy-noise", type=float, default=0.20)
     p.add_argument("--target-noise-clip", type=float, default=0.50)
     p.add_argument("--hidden-size", type=int, default=256)
+    p.add_argument("--init-actor-checkpoint", type=str, default="")
+    p.add_argument("--init-obs-rms-from-checkpoint", action="store_true")
+    p.add_argument("--prefill-replay-dataset", type=str, default="")
+    p.add_argument("--prefill-replay-max-samples", type=int, default=0)
 
     # Exploration.
     p.add_argument("--exploration-noise", type=float, default=0.30)
@@ -178,6 +182,13 @@ def choose_device(device_arg: str) -> torch.device:
     if device_arg == "cuda":
         return torch.device("cuda")
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def load_checkpoint(path: Path, map_location: Any) -> dict[str, Any]:
+    try:
+        return torch.load(path, map_location=map_location, weights_only=False)
+    except TypeError:
+        return torch.load(path, map_location=map_location)
 
 
 def format_duration(seconds: float) -> str:
@@ -438,13 +449,56 @@ def main() -> None:
     hard_update(actor_target, actor)
     hard_update(critic_target, critic)
 
+    if args.init_actor_checkpoint:
+        init_ckpt_path = Path(args.init_actor_checkpoint).resolve()
+        init_ckpt = load_checkpoint(init_ckpt_path, map_location=device)
+        if "actor_state_dict" not in init_ckpt:
+            raise KeyError(f"--init-actor-checkpoint missing actor_state_dict: {init_ckpt_path}")
+        actor.load_state_dict(init_ckpt["actor_state_dict"])
+        hard_update(actor_target, actor)
+        print(f"[train-td3] loaded actor init from: {init_ckpt_path}", flush=True)
+
     actor_opt = torch.optim.Adam(actor.parameters(), lr=args.actor_lr)
     critic_opt = torch.optim.Adam(critic.parameters(), lr=args.critic_lr)
 
     obs_rms = RunningMeanStd(shape=(obs_dim,))
+    if args.init_actor_checkpoint and args.init_obs_rms_from_checkpoint:
+        init_ckpt_path = Path(args.init_actor_checkpoint).resolve()
+        init_ckpt = load_checkpoint(init_ckpt_path, map_location="cpu")
+        if "obs_rms" in init_ckpt:
+            obs_rms.load_state_dict(init_ckpt["obs_rms"])
+            print(f"[train-td3] loaded obs_rms from init checkpoint: {init_ckpt_path}", flush=True)
     obs_rms.update(obs)
 
     replay = ReplayBuffer(obs_dim=obs_dim, action_dim=action_dim, capacity=args.buffer_size)
+    if args.prefill_replay_dataset:
+        ds_path = Path(args.prefill_replay_dataset).resolve()
+        ds = np.load(ds_path)
+        if "obs" not in ds or "actions_norm" not in ds or "next_obs" not in ds:
+            raise KeyError(
+                "--prefill-replay-dataset must contain at least obs/actions_norm/next_obs arrays "
+                f"(got keys: {list(ds.keys())})"
+            )
+        obs_ds = np.asarray(ds["obs"], dtype=np.float32)
+        act_ds = np.asarray(ds["actions_norm"], dtype=np.float32)
+        next_obs_ds = np.asarray(ds["next_obs"], dtype=np.float32)
+        rew_ds = np.asarray(ds["rewards"], dtype=np.float32) if "rewards" in ds else np.zeros((obs_ds.shape[0],), dtype=np.float32)
+        done_ds = np.asarray(ds["dones"], dtype=np.float32) if "dones" in ds else np.zeros((obs_ds.shape[0],), dtype=np.float32)
+
+        n = int(obs_ds.shape[0])
+        if args.prefill_replay_max_samples > 0:
+            n = min(n, int(args.prefill_replay_max_samples))
+        n = min(n, int(args.buffer_size))
+        for i in range(n):
+            rew_scaled = float(np.clip(float(rew_ds[i]) / float(args.reward_scale), -args.reward_clip, args.reward_clip))
+            replay.add(
+                obs=obs_ds[i],
+                action=act_ds[i],
+                reward=rew_scaled,
+                next_obs=next_obs_ds[i],
+                done=float(done_ds[i]),
+            )
+        print(f"[train-td3] prefilled replay from {ds_path} with {n} transitions", flush=True)
 
     ep_returns = np.zeros(args.num_envs, dtype=np.float64)
     ep_lengths = np.zeros(args.num_envs, dtype=np.int32)
