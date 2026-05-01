@@ -91,6 +91,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--trail-len", type=int, default=90)
     p.add_argument("--frame-stride", type=int, default=1)
     p.add_argument("--axis-pad", type=float, default=0.20)
+    p.add_argument("--show-title", dest="show_title", action="store_true")
+    p.add_argument("--no-show-title", dest="show_title", action="store_false")
+    p.set_defaults(show_title=True)
     p.add_argument("--outdir", type=str, default="inference_mpc_ilqr_fixed_init")
 
     return p.parse_args()
@@ -159,6 +162,7 @@ def save_rollout_gif(
     reference_path: np.ndarray,
     out_gif: Path,
     title: str,
+    show_title: bool,
     trail_len: int,
     frame_stride: int,
     axis_pad: float,
@@ -178,7 +182,8 @@ def save_rollout_gif(
         trails.append(tr)
 
     t_text = ax.text(0.02, 0.97, "", transform=ax.transAxes, va="top", fontsize=11)
-    ax.set_title(title)
+    if show_title:
+        ax.set_title(title)
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_aspect("equal", adjustable="box")
@@ -464,6 +469,7 @@ def main() -> None:
             reference_path=reference_path,
             out_gif=gif_path,
             title=f"MPC/iLQR Setup {i} (seed={r['setup_seed']})",
+            show_title=bool(args.show_title),
             trail_len=args.trail_len,
             frame_stride=args.frame_stride,
             axis_pad=args.axis_pad,
@@ -476,6 +482,7 @@ def main() -> None:
         reference_path=reference_path,
         out_gif=best_gif,
         title=f"MPC/iLQR Best Convergence (seed={best['setup_seed']})",
+        show_title=bool(args.show_title),
         trail_len=args.trail_len,
         frame_stride=args.frame_stride,
         axis_pad=args.axis_pad,

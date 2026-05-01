@@ -52,6 +52,12 @@ mkdir -p "$MPLCONFIGDIR"
 OUTDIR="${OUTDIR:-$PWD/inference_mpc_ilqr_fixed_init}"
 mkdir -p "$OUTDIR"
 
+SHOW_TITLE="${SHOW_TITLE:-1}"
+TITLE_FLAG="--show-title"
+if [[ "$SHOW_TITLE" == "0" ]]; then
+  TITLE_FLAG="--no-show-title"
+fi
+
 python run_mpc_ilqr_fixed_init.py \
   --num-setups "${NUM_SETUPS:-10}" \
   --seed "${SEED:-4301}" \
@@ -93,6 +99,7 @@ python run_mpc_ilqr_fixed_init.py \
   --trail-len "${TRAIL_LEN:-90}" \
   --frame-stride "${FRAME_STRIDE:-1}" \
   --axis-pad "${AXIS_PAD:-0.20}" \
+  "$TITLE_FLAG" \
   --outdir "$OUTDIR"
 
 echo "$OUTDIR" > "$PIPE_DIR/mpc_outdir.txt"
