@@ -29,6 +29,14 @@ class ILQRConfig:
     near_collision_distance: float = 0.20
 
     line_search_alphas: tuple[float, ...] = (1.0, 0.5, 0.25, 0.1, 0.05)
+    # Cross-entropy trajectory optimization (open-loop warm-start)
+    cem_iters: int = 10
+    cem_population: int = 128
+    cem_elite_frac: float = 0.12
+    cem_init_std_frac: float = 0.45
+    cem_min_std_frac: float = 0.04
+    cem_smoothing: float = 0.25
+    cem_seed: int = 7
 
 
 @dataclass
@@ -84,6 +92,7 @@ class Figure8ILQRMPC:
         self._identity_action = np.eye(self.action_dim, dtype=np.float64)
 
         self.regularization = float(self.ilqr_cfg.reg_init)
+        self._rng = np.random.default_rng(int(self.ilqr_cfg.cem_seed))
 
     def state_to_vector(self, positions: np.ndarray, velocities: np.ndarray) -> np.ndarray:
         pos = np.asarray(positions, dtype=np.float64).reshape(self.pos_dim)
@@ -271,6 +280,83 @@ class Figure8ILQRMPC:
         for t in range(out.shape[0]):
             out[t] = self._clip_action(out[t])
         return out
+
+    def optimize_open_loop_sequence(
+        self,
+        x0: np.ndarray,
+        phase_idx: int,
+        assignment: Sequence[int],
+        horizon: int | None = None,
+        init_actions: np.ndarray | None = None,
+    ) -> ILQRPlanResult:
+        """
+        Cross-entropy method (CEM) open-loop optimizer.
+
+        Returns a direct action sequence for the fixed initial state. This is
+        used as a warm-start for receding-horizon iLQR MPC.
+        """
+        h = int(horizon) if horizon is not None else int(self.ilqr_cfg.horizon)
+        ref_seq = self.build_reference_trajectory(phase_idx=phase_idx, assignment=assignment, horizon=h)
+
+        if init_actions is not None and tuple(np.asarray(init_actions).shape) == (h, self.action_dim):
+            mean = np.asarray(init_actions, dtype=np.float64).copy()
+            for t in range(h):
+                mean[t] = self._clip_action(mean[t])
+        else:
+            mean = np.zeros((h, self.action_dim), dtype=np.float64)
+
+        max_action = float(self.env_cfg.max_action_norm)
+        init_std = max_action * float(self.ilqr_cfg.cem_init_std_frac)
+        min_std = max_action * float(self.ilqr_cfg.cem_min_std_frac)
+        std = np.full((h, self.action_dim), init_std, dtype=np.float64)
+
+        pop = max(8, int(self.ilqr_cfg.cem_population))
+        elite_k = max(2, int(round(pop * float(self.ilqr_cfg.cem_elite_frac))))
+        alpha = float(self.ilqr_cfg.cem_smoothing)
+        alpha = min(0.95, max(0.0, alpha))
+
+        best_u = mean.copy()
+        best_x, best_cost = self._rollout(x0=x0, u_seq=best_u, ref_seq=ref_seq)
+
+        for _ in range(max(1, int(self.ilqr_cfg.cem_iters))):
+            samples = self._rng.normal(
+                loc=mean[None, :, :],
+                scale=std[None, :, :],
+                size=(pop, h, self.action_dim),
+            )
+            costs = np.zeros(pop, dtype=np.float64)
+            for i in range(pop):
+                for t in range(h):
+                    samples[i, t] = self._clip_action(samples[i, t])
+                _, c = self._rollout(x0=x0, u_seq=samples[i], ref_seq=ref_seq)
+                costs[i] = c
+
+            elite_idx = np.argsort(costs)[:elite_k]
+            elite = samples[elite_idx]
+            elite_cost = float(costs[elite_idx[0]])
+
+            new_mean = np.mean(elite, axis=0)
+            new_std = np.std(elite, axis=0)
+            mean = (1.0 - alpha) * mean + alpha * new_mean
+            std = (1.0 - alpha) * std + alpha * new_std
+            std = np.maximum(std, min_std)
+
+            if elite_cost < best_cost:
+                best_cost = elite_cost
+                best_u = elite[0].copy()
+                best_x, _ = self._rollout(x0=x0, u_seq=best_u, ref_seq=ref_seq)
+
+        for t in range(h):
+            best_u[t] = self._clip_action(best_u[t])
+
+        return ILQRPlanResult(
+            actions=best_u,
+            states=best_x,
+            total_cost=float(best_cost),
+            iterations=max(1, int(self.ilqr_cfg.cem_iters)),
+            converged=True,
+            regularization=float(self.regularization),
+        )
 
     def plan(
         self,
