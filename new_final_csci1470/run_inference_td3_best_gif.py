@@ -49,6 +49,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--fixed-init-vel-jitter-std", type=float, default=-1.0)
     p.add_argument("--fixed-init-jitter-tries", type=int, default=64)
     p.add_argument("--override-fixed-jitter-zero", action="store_true")
+    p.add_argument("--save-nohelp-baseline", dest="save_nohelp_baseline", action="store_true")
+    p.add_argument("--no-save-nohelp-baseline", dest="save_nohelp_baseline", action="store_false")
+    p.set_defaults(save_nohelp_baseline=True)
 
     return p.parse_args()
 
@@ -148,8 +151,8 @@ def save_rollout_gif(
 
 
 def run_one_setup(
-    actor: TD3Actor,
-    obs_rms: RunningMeanStd,
+    actor: TD3Actor | None,
+    obs_rms: RunningMeanStd | None,
     cfg: EnvConfig,
     rw: RewardWeights,
     setup_seed: int,
@@ -164,7 +167,11 @@ def run_one_setup(
     require_final_threshold: bool,
     min_total_steps_for_converged: int,
     device: torch.device,
+    mode: str = "policy",
 ) -> dict[str, Any]:
+    if mode not in {"policy", "nohelp"}:
+        raise ValueError(f"Unsupported mode: {mode}")
+
     env = Figure8ChoreographyEnv(config=cfg, weights=rw)
     obs, _ = env.reset(seed=setup_seed)
 
@@ -184,13 +191,18 @@ def run_one_setup(
     t = 0
 
     while not done and t < max_steps:
-        obs_n = obs_rms.normalize(obs[None, :], clip=obs_clip)
-        obs_t = torch.as_tensor(obs_n, dtype=torch.float32, device=device)
-        with torch.no_grad():
-            action_norm = actor(obs_t).squeeze(0).cpu().numpy()
+        if mode == "policy":
+            assert actor is not None
+            assert obs_rms is not None
+            obs_n = obs_rms.normalize(obs[None, :], clip=obs_clip)
+            obs_t = torch.as_tensor(obs_n, dtype=torch.float32, device=device)
+            with torch.no_grad():
+                action_norm = actor(obs_t).squeeze(0).cpu().numpy()
 
-        action = (action_norm * cfg.max_action_norm).reshape(env.action_shape)
-        action = np.clip(action, -cfg.max_action_norm, cfg.max_action_norm)
+            action = (action_norm * cfg.max_action_norm).reshape(env.action_shape)
+            action = np.clip(action, -cfg.max_action_norm, cfg.max_action_norm)
+        else:
+            action = np.zeros(env.action_shape, dtype=np.float64)
 
         obs, reward, done, info = env.step(action)
         positions_hist.append(env.sim.get_state().positions.copy())
@@ -278,6 +290,7 @@ def run_one_setup(
         rank_tuple = [has_converged, has_failure, rank_step, final_pos_err, min_pos_err, final_vel_err, min_pos_step]
 
     return {
+        "mode": mode,
         "setup_seed": int(setup_seed),
         "steps": int(t),
         "collided": bool(collided),
@@ -365,6 +378,7 @@ def main() -> None:
             require_final_threshold=args.require_final_threshold,
             min_total_steps_for_converged=args.min_total_steps_for_converged,
             device=device,
+            mode="policy",
         )
         print(
             f"[setup {i+1}/{args.num_setups} seed={s}] strict={rec['strict_converged']} "
@@ -375,6 +389,40 @@ def main() -> None:
         runs.append(rec)
 
     best_idx, best = min(enumerate(runs), key=lambda kv: tuple(kv[1]["rank_tuple"]))
+
+    nohelp_runs: list[dict[str, Any]] = []
+    nohelp_best_idx: int | None = None
+    nohelp_best: dict[str, Any] | None = None
+    if args.save_nohelp_baseline:
+        for i, s in enumerate(setup_seeds):
+            rec = run_one_setup(
+                actor=None,
+                obs_rms=None,
+                cfg=cfg,
+                rw=rw,
+                setup_seed=s,
+                max_steps=args.max_steps,
+                obs_clip=args.obs_clip,
+                pos_threshold=args.pos_threshold,
+                vel_threshold=args.vel_threshold,
+                consecutive_converged=args.consecutive_converged,
+                strict_mode=args.strict_mode,
+                lock_to_end=args.lock_to_end,
+                require_no_failure=args.require_no_failure,
+                require_final_threshold=args.require_final_threshold,
+                min_total_steps_for_converged=args.min_total_steps_for_converged,
+                device=device,
+                mode="nohelp",
+            )
+            print(
+                f"[nohelp setup {i+1}/{args.num_setups} seed={s}] strict={rec['strict_converged']} "
+                f"converged_step={rec['converged_step']} final_pos_err={rec['final_pos_err']:.5f} "
+                f"final_vel_err={rec['final_vel_err']:.5f} collided={rec['collided']} escaped={rec['escaped']}",
+                flush=True,
+            )
+            nohelp_runs.append(rec)
+
+        nohelp_best_idx, nohelp_best = min(enumerate(nohelp_runs), key=lambda kv: tuple(kv[1]["rank_tuple"]))
 
     env_ref = Figure8ChoreographyEnv(config=cfg, weights=rw)
     reference_path = env_ref.reference.positions
@@ -403,14 +451,55 @@ def main() -> None:
         axis_pad=args.axis_pad,
     )
 
-    summary_rows = []
-    for r in runs:
-        rr = {
-            k: v
-            for k, v in r.items()
-            if k not in {"positions_hist", "pos_err_hist", "vel_err_hist", "phase_hist"}
-        }
-        summary_rows.append(rr)
+    nohelp_best_gif: Path | None = None
+    if args.save_nohelp_baseline:
+        for i, r in enumerate(nohelp_runs):
+            gif_path = out_dir / f"nohelp_setup_{i:02d}_seed_{r['setup_seed']}.gif"
+            save_rollout_gif(
+                positions_hist=r["positions_hist"],
+                reference_path=reference_path,
+                out_gif=gif_path,
+                title=f"No-Help Setup {i} (seed={r['setup_seed']})",
+                trail_len=args.trail_len,
+                frame_stride=args.frame_stride,
+                axis_pad=args.axis_pad,
+            )
+            r["gif_path"] = str(gif_path)
+
+        assert nohelp_best is not None
+        nohelp_best_gif = out_dir / f"nohelp_best_convergence_seed_{nohelp_best['setup_seed']}.gif"
+        save_rollout_gif(
+            positions_hist=nohelp_best["positions_hist"],
+            reference_path=reference_path,
+            out_gif=nohelp_best_gif,
+            title=f"No-Help Best Convergence (seed={nohelp_best['setup_seed']})",
+            trail_len=args.trail_len,
+            frame_stride=args.frame_stride,
+            axis_pad=args.axis_pad,
+        )
+
+    def _strip_hist(runs_in: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        out = []
+        for r in runs_in:
+            rr = {
+                k: v
+                for k, v in r.items()
+                if k not in {"positions_hist", "pos_err_hist", "vel_err_hist", "phase_hist"}
+            }
+            out.append(rr)
+        return out
+
+    summary_rows = _strip_hist(runs)
+    nohelp_summary_rows = _strip_hist(nohelp_runs) if args.save_nohelp_baseline else []
+
+    policy_converged = int(sum(1 for r in runs if r["strict_converged"]))
+    policy_convergence_pct = 100.0 * (policy_converged / max(1, len(runs)))
+    if args.save_nohelp_baseline:
+        nohelp_converged = int(sum(1 for r in nohelp_runs if r["strict_converged"]))
+        nohelp_convergence_pct = 100.0 * (nohelp_converged / max(1, len(nohelp_runs)))
+    else:
+        nohelp_converged = 0
+        nohelp_convergence_pct = None
 
     summary = {
         "controller": "td3",
@@ -429,7 +518,17 @@ def main() -> None:
         "best_seed": int(best["setup_seed"]),
         "best_rank_tuple": best["rank_tuple"],
         "best_gif": str(best_gif),
+        "policy_convergence_count": policy_converged,
+        "policy_convergence_pct": policy_convergence_pct,
+        "nohelp_enabled": bool(args.save_nohelp_baseline),
+        "nohelp_convergence_count": nohelp_converged,
+        "nohelp_convergence_pct": nohelp_convergence_pct,
+        "nohelp_best_index": int(nohelp_best_idx) if nohelp_best_idx is not None else None,
+        "nohelp_best_seed": int(nohelp_best["setup_seed"]) if nohelp_best is not None else None,
+        "nohelp_best_rank_tuple": nohelp_best["rank_tuple"] if nohelp_best is not None else None,
+        "nohelp_best_gif": str(nohelp_best_gif) if nohelp_best_gif is not None else None,
         "runs": summary_rows,
+        "nohelp_runs": nohelp_summary_rows,
         "env_config": asdict(cfg),
         "reward_weights": asdict(rw),
         "checkpoint": str(ckpt_path.resolve()),
@@ -441,6 +540,18 @@ def main() -> None:
 
     print(f"saved {len(runs)} setup gifs under: {out_dir}", flush=True)
     print(f"saved best gif: {best_gif}", flush=True)
+    if args.save_nohelp_baseline:
+        print(f"saved {len(nohelp_runs)} no-help setup gifs under: {out_dir}", flush=True)
+        print(f"saved no-help best gif: {nohelp_best_gif}", flush=True)
+    print(
+        f"convergence_pct(policy)={policy_convergence_pct:.1f}% ({policy_converged}/{len(runs)})",
+        flush=True,
+    )
+    if args.save_nohelp_baseline:
+        print(
+            f"convergence_pct(nohelp)={nohelp_convergence_pct:.1f}% ({nohelp_converged}/{len(nohelp_runs)})",
+            flush=True,
+        )
     print(f"saved summary: {summary_path}", flush=True)
 
 

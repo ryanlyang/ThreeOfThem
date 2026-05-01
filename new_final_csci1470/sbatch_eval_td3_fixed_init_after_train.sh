@@ -63,6 +63,11 @@ echo "PIPE_TAG=$PIPE_TAG"
 echo "checkpoint=$CKPT_PATH"
 echo "outdir=$OUTDIR"
 
+NOHELP_FLAG="--save-nohelp-baseline"
+if [[ "${SAVE_NOHELP_BASELINE:-1}" == "0" ]]; then
+  NOHELP_FLAG="--no-save-nohelp-baseline"
+fi
+
 python evaluate_td3_fixed_init.py \
   --checkpoint "$CKPT_PATH" \
   --episodes "${EVAL_EPISODES:-12}" \
@@ -81,6 +86,7 @@ python evaluate_td3_fixed_init.py \
   --fixed-init-pos-jitter-std "${FIXED_INIT_POS_JITTER_STD_EVAL:-0.006}" \
   --fixed-init-vel-jitter-std "${FIXED_INIT_VEL_JITTER_STD_EVAL:-0.004}" \
   --fixed-init-jitter-tries "${FIXED_INIT_JITTER_TRIES_EVAL:-64}" \
+  $NOHELP_FLAG \
   --outdir "$OUTDIR"
 
 echo "$OUTDIR" > "$PIPE_DIR/inference_outdir.txt"

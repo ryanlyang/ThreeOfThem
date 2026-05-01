@@ -27,6 +27,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--fixed-init-vel-jitter-std", type=float, default=0.004)
     p.add_argument("--fixed-init-jitter-tries", type=int, default=64)
     p.add_argument("--override-fixed-jitter-zero", action="store_true")
+    p.add_argument("--save-nohelp-baseline", dest="save_nohelp_baseline", action="store_true")
+    p.add_argument("--no-save-nohelp-baseline", dest="save_nohelp_baseline", action="store_false")
+    p.set_defaults(save_nohelp_baseline=True)
     return p.parse_args()
 
 
@@ -108,6 +111,11 @@ def main() -> None:
     if args.override_fixed_jitter_zero:
         eval_cmd.append("--override-fixed-jitter-zero")
         infer_cmd.append("--override-fixed-jitter-zero")
+
+    if args.save_nohelp_baseline:
+        infer_cmd.append("--save-nohelp-baseline")
+    else:
+        infer_cmd.append("--no-save-nohelp-baseline")
 
     print("Running TD3 evaluation:", flush=True)
     print(" ".join(eval_cmd), flush=True)
