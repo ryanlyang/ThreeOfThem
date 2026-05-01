@@ -67,6 +67,18 @@ MPC_TERMINAL_SCALE="${MPC_TERMINAL_SCALE:-60.0}"
 MPC_NEAR_COLLISION_WEIGHT="${MPC_NEAR_COLLISION_WEIGHT:-100.0}"
 MPC_NEAR_COLLISION_DISTANCE="${MPC_NEAR_COLLISION_DISTANCE:-0.35}"
 
+TD3_W_POS="${TD3_W_POS:-20.0}"
+TD3_W_VEL="${TD3_W_VEL:-12.0}"
+TD3_W_FUEL="${TD3_W_FUEL:-0.0005}"
+TD3_W_NEAR_COLLISION="${TD3_W_NEAR_COLLISION:-20.0}"
+TD3_W_COLLISION="${TD3_W_COLLISION:-500.0}"
+TD3_W_ESCAPE="${TD3_W_ESCAPE:-50.0}"
+TD3_W_SWITCH="${TD3_W_SWITCH:-0.08}"
+TD3_W_PHASE="${TD3_W_PHASE:-0.20}"
+TD3_EXPL_NOISE_START="${TD3_EXPL_NOISE_START:-0.10}"
+TD3_EXPL_NOISE_END="${TD3_EXPL_NOISE_END:-0.02}"
+TD3_EXPL_DECAY_STEPS="${TD3_EXPL_DECAY_STEPS:-300000}"
+
 echo "=== STAGE 1/5: Collect MPC dataset ==="
 python collect_mpc_ilqr_dataset.py \
   --num-setups "$MPC_DATASET_SETUPS" \
@@ -190,9 +202,9 @@ python train_td3_figure8.py \
   --init-obs-rms-from-checkpoint \
   --prefill-replay-dataset "$DATASET_NPZ" \
   --prefill-replay-max-samples "${TD3_PREFILL_MAX_SAMPLES:-300000}" \
-  --exploration-noise "${TD3_EXPL_NOISE_START:-0.10}" \
-  --exploration-noise-final "${TD3_EXPL_NOISE_END:-0.02}" \
-  --exploration-decay-steps "${TD3_EXPL_DECAY_STEPS:-300000}" \
+  --exploration-noise "$TD3_EXPL_NOISE_START" \
+  --exploration-noise-final "$TD3_EXPL_NOISE_END" \
+  --exploration-decay-steps "$TD3_EXPL_DECAY_STEPS" \
   --reward-scale 800.0 \
   --reward-clip 20.0 \
   --obs-clip 10.0 \
@@ -212,14 +224,14 @@ python train_td3_figure8.py \
   --eval-fixed-init-pos-jitter-std "$TRAIN_JITTER_POS" \
   --eval-fixed-init-vel-jitter-std "$TRAIN_JITTER_VEL" \
   --eval-fixed-init-jitter-tries "$TRAIN_JITTER_TRIES" \
-  --w-pos 20.0 \
-  --w-vel 12.0 \
-  --w-fuel 0.0005 \
-  --w-near-collision 20.0 \
-  --w-collision 500.0 \
-  --w-escape 50.0 \
-  --w-switch 0.08 \
-  --w-phase 0.20 \
+  --w-pos "$TD3_W_POS" \
+  --w-vel "$TD3_W_VEL" \
+  --w-fuel "$TD3_W_FUEL" \
+  --w-near-collision "$TD3_W_NEAR_COLLISION" \
+  --w-collision "$TD3_W_COLLISION" \
+  --w-escape "$TD3_W_ESCAPE" \
+  --w-switch "$TD3_W_SWITCH" \
+  --w-phase "$TD3_W_PHASE" \
   --eval-every-env-steps 25000 \
   --eval-episodes 10 \
   --eval-strict-mode \
