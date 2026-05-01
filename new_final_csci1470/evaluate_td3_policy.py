@@ -85,6 +85,11 @@ def main() -> None:
     escapes = []
     pos_errs = []
     vel_errs = []
+    total_fuels = []
+    mean_fuels_per_step = []
+    total_normalized_fuels = []
+    mean_normalized_fuels_per_step = []
+    mean_action_norms = []
 
     for _ in range(int(args.episodes)):
         env = Figure8ChoreographyEnv(config=cfg, weights=rw)
@@ -93,6 +98,9 @@ def main() -> None:
         ep_return = 0.0
         ep_len = 0
         info = {}
+        action_sq_hist = []
+        action_norm_hist = []
+        fuel_cost_hist = []
 
         while not done:
             obs_n = obs_rms.normalize(obs[None, :], clip=args.obs_clip)
@@ -105,6 +113,10 @@ def main() -> None:
             obs, reward, done, info = env.step(action)
             ep_return += float(reward)
             ep_len += 1
+            action_sq = np.sum(action**2, axis=1)
+            action_sq_hist.append(float(np.mean(action_sq)))
+            action_norm_hist.append(float(np.mean(np.linalg.norm(action, axis=1))))
+            fuel_cost_hist.append(float(info.get("fuel_cost", 0.0)))
 
         returns.append(ep_return)
         lengths.append(ep_len)
@@ -112,6 +124,11 @@ def main() -> None:
         escapes.append(float(bool(info.get("escaped", False))))
         pos_errs.append(float(info.get("position_error", np.nan)))
         vel_errs.append(float(info.get("velocity_direction_error", np.nan)))
+        total_fuels.append(float(np.sum(action_sq_hist)) if action_sq_hist else 0.0)
+        mean_fuels_per_step.append(float(np.mean(action_sq_hist)) if action_sq_hist else 0.0)
+        total_normalized_fuels.append(float(np.sum(fuel_cost_hist)) if fuel_cost_hist else 0.0)
+        mean_normalized_fuels_per_step.append(float(np.mean(fuel_cost_hist)) if fuel_cost_hist else 0.0)
+        mean_action_norms.append(float(np.mean(action_norm_hist)) if action_norm_hist else 0.0)
 
     summary = {
         "algo": "td3",
@@ -124,6 +141,11 @@ def main() -> None:
         "failure_rate": float(np.mean(np.asarray(collisions) + np.asarray(escapes) > 0.0)),
         "final_pos_err_mean": float(np.nanmean(pos_errs)),
         "final_vel_err_mean": float(np.nanmean(vel_errs)),
+        "avg_total_fuel": float(np.mean(total_fuels)),
+        "avg_mean_fuel_per_step": float(np.mean(mean_fuels_per_step)),
+        "avg_total_normalized_fuel": float(np.mean(total_normalized_fuels)),
+        "avg_mean_normalized_fuel_per_step": float(np.mean(mean_normalized_fuels_per_step)),
+        "avg_mean_action_norm": float(np.mean(mean_action_norms)),
     }
 
     print(json.dumps(summary, indent=2), flush=True)

@@ -180,6 +180,9 @@ def run_one_setup(
     vel_err_hist = []
     reward_hist = []
     phase_hist = []
+    fuel_cost_hist = []
+    action_sq_hist = []
+    action_norm_hist = []
 
     converged_step = None
     converge_streak = 0
@@ -207,6 +210,9 @@ def run_one_setup(
         obs, reward, done, info = env.step(action)
         positions_hist.append(env.sim.get_state().positions.copy())
 
+        action_sq = np.sum(action**2, axis=1)
+        mean_action_sq = float(np.mean(action_sq))
+        mean_action_norm = float(np.mean(np.linalg.norm(action, axis=1)))
         pos_err = float(info.get("position_error", np.nan))
         vel_err = float(info.get("velocity_direction_error", np.nan))
         step_collided = bool(info.get("collided", False))
@@ -217,6 +223,9 @@ def run_one_setup(
         vel_err_hist.append(vel_err)
         reward_hist.append(float(reward))
         phase_hist.append(int(info.get("phase_idx", -1)))
+        fuel_cost_hist.append(float(info.get("fuel_cost", 0.0)))
+        action_sq_hist.append(mean_action_sq)
+        action_norm_hist.append(mean_action_norm)
 
         meets = (pos_err <= pos_threshold) and (vel_err <= vel_threshold) and (not step_collided) and (not step_escaped)
         if meets:
@@ -241,6 +250,11 @@ def run_one_setup(
 
     final_pos_err = float(pos_err_hist[-1]) if pos_err_hist else float("nan")
     final_vel_err = float(vel_err_hist[-1]) if vel_err_hist else float("nan")
+    total_normalized_fuel = float(np.sum(fuel_cost_hist)) if fuel_cost_hist else 0.0
+    mean_normalized_fuel_per_step = float(np.mean(fuel_cost_hist)) if fuel_cost_hist else 0.0
+    total_fuel = float(np.sum(action_sq_hist)) if action_sq_hist else 0.0
+    mean_fuel_per_step = float(np.mean(action_sq_hist)) if action_sq_hist else 0.0
+    mean_action_norm = float(np.mean(action_norm_hist)) if action_norm_hist else 0.0
     collided = bool(collided_any)
     escaped = bool(escaped_any)
     no_failure = not (collided or escaped)
@@ -308,6 +322,11 @@ def run_one_setup(
         "min_pos_step": int(min_pos_step),
         "final_pos_err": final_pos_err,
         "final_vel_err": final_vel_err,
+        "total_fuel": total_fuel,
+        "mean_fuel_per_step": mean_fuel_per_step,
+        "total_normalized_fuel": total_normalized_fuel,
+        "mean_normalized_fuel_per_step": mean_normalized_fuel_per_step,
+        "mean_action_norm": mean_action_norm,
         "return_sum": float(np.sum(reward_hist)),
         "rank_tuple": rank_tuple,
         "positions_hist": np.asarray(positions_hist, dtype=np.float64),
@@ -383,7 +402,8 @@ def main() -> None:
         print(
             f"[setup {i+1}/{args.num_setups} seed={s}] strict={rec['strict_converged']} "
             f"converged_step={rec['converged_step']} final_pos_err={rec['final_pos_err']:.5f} "
-            f"final_vel_err={rec['final_vel_err']:.5f} collided={rec['collided']} escaped={rec['escaped']}",
+            f"final_vel_err={rec['final_vel_err']:.5f} fuel={rec['total_fuel']:.5f} "
+            f"collided={rec['collided']} escaped={rec['escaped']}",
             flush=True,
         )
         runs.append(rec)
@@ -417,7 +437,8 @@ def main() -> None:
             print(
                 f"[nohelp setup {i+1}/{args.num_setups} seed={s}] strict={rec['strict_converged']} "
                 f"converged_step={rec['converged_step']} final_pos_err={rec['final_pos_err']:.5f} "
-                f"final_vel_err={rec['final_vel_err']:.5f} collided={rec['collided']} escaped={rec['escaped']}",
+                f"final_vel_err={rec['final_vel_err']:.5f} fuel={rec['total_fuel']:.5f} "
+                f"collided={rec['collided']} escaped={rec['escaped']}",
                 flush=True,
             )
             nohelp_runs.append(rec)
@@ -494,12 +515,33 @@ def main() -> None:
 
     policy_converged = int(sum(1 for r in runs if r["strict_converged"]))
     policy_convergence_pct = 100.0 * (policy_converged / max(1, len(runs)))
+    policy_avg_total_fuel = float(np.mean([r["total_fuel"] for r in runs])) if runs else 0.0
+    policy_avg_mean_fuel_per_step = float(np.mean([r["mean_fuel_per_step"] for r in runs])) if runs else 0.0
+    policy_avg_total_normalized_fuel = float(np.mean([r["total_normalized_fuel"] for r in runs])) if runs else 0.0
+    policy_avg_mean_normalized_fuel_per_step = (
+        float(np.mean([r["mean_normalized_fuel_per_step"] for r in runs])) if runs else 0.0
+    )
+    policy_avg_mean_action_norm = float(np.mean([r["mean_action_norm"] for r in runs])) if runs else 0.0
     if args.save_nohelp_baseline:
         nohelp_converged = int(sum(1 for r in nohelp_runs if r["strict_converged"]))
         nohelp_convergence_pct = 100.0 * (nohelp_converged / max(1, len(nohelp_runs)))
+        nohelp_avg_total_fuel = float(np.mean([r["total_fuel"] for r in nohelp_runs])) if nohelp_runs else 0.0
+        nohelp_avg_mean_fuel_per_step = float(np.mean([r["mean_fuel_per_step"] for r in nohelp_runs])) if nohelp_runs else 0.0
+        nohelp_avg_total_normalized_fuel = (
+            float(np.mean([r["total_normalized_fuel"] for r in nohelp_runs])) if nohelp_runs else 0.0
+        )
+        nohelp_avg_mean_normalized_fuel_per_step = (
+            float(np.mean([r["mean_normalized_fuel_per_step"] for r in nohelp_runs])) if nohelp_runs else 0.0
+        )
+        nohelp_avg_mean_action_norm = float(np.mean([r["mean_action_norm"] for r in nohelp_runs])) if nohelp_runs else 0.0
     else:
         nohelp_converged = 0
         nohelp_convergence_pct = None
+        nohelp_avg_total_fuel = None
+        nohelp_avg_mean_fuel_per_step = None
+        nohelp_avg_total_normalized_fuel = None
+        nohelp_avg_mean_normalized_fuel_per_step = None
+        nohelp_avg_mean_action_norm = None
 
     summary = {
         "controller": "td3",
@@ -520,9 +562,19 @@ def main() -> None:
         "best_gif": str(best_gif),
         "policy_convergence_count": policy_converged,
         "policy_convergence_pct": policy_convergence_pct,
+        "policy_avg_total_fuel": policy_avg_total_fuel,
+        "policy_avg_mean_fuel_per_step": policy_avg_mean_fuel_per_step,
+        "policy_avg_total_normalized_fuel": policy_avg_total_normalized_fuel,
+        "policy_avg_mean_normalized_fuel_per_step": policy_avg_mean_normalized_fuel_per_step,
+        "policy_avg_mean_action_norm": policy_avg_mean_action_norm,
         "nohelp_enabled": bool(args.save_nohelp_baseline),
         "nohelp_convergence_count": nohelp_converged,
         "nohelp_convergence_pct": nohelp_convergence_pct,
+        "nohelp_avg_total_fuel": nohelp_avg_total_fuel,
+        "nohelp_avg_mean_fuel_per_step": nohelp_avg_mean_fuel_per_step,
+        "nohelp_avg_total_normalized_fuel": nohelp_avg_total_normalized_fuel,
+        "nohelp_avg_mean_normalized_fuel_per_step": nohelp_avg_mean_normalized_fuel_per_step,
+        "nohelp_avg_mean_action_norm": nohelp_avg_mean_action_norm,
         "nohelp_best_index": int(nohelp_best_idx) if nohelp_best_idx is not None else None,
         "nohelp_best_seed": int(nohelp_best["setup_seed"]) if nohelp_best is not None else None,
         "nohelp_best_rank_tuple": nohelp_best["rank_tuple"] if nohelp_best is not None else None,
@@ -547,9 +599,21 @@ def main() -> None:
         f"convergence_pct(policy)={policy_convergence_pct:.1f}% ({policy_converged}/{len(runs)})",
         flush=True,
     )
+    print(
+        f"avg_fuel(policy)={policy_avg_total_fuel:.5f} "
+        f"avg_fuel_per_step(policy)={policy_avg_mean_fuel_per_step:.5f} "
+        f"avg_normalized_fuel(policy)={policy_avg_total_normalized_fuel:.5f}",
+        flush=True,
+    )
     if args.save_nohelp_baseline:
         print(
             f"convergence_pct(nohelp)={nohelp_convergence_pct:.1f}% ({nohelp_converged}/{len(nohelp_runs)})",
+            flush=True,
+        )
+        print(
+            f"avg_fuel(nohelp)={nohelp_avg_total_fuel:.5f} "
+            f"avg_fuel_per_step(nohelp)={nohelp_avg_mean_fuel_per_step:.5f} "
+            f"avg_normalized_fuel(nohelp)={nohelp_avg_total_normalized_fuel:.5f}",
             flush=True,
         )
     print(f"saved summary: {summary_path}", flush=True)

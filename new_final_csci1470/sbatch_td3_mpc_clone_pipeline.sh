@@ -57,6 +57,15 @@ TRAIN_JITTER_TRIES="${TRAIN_JITTER_TRIES:-64}"
 MPC_DATASET_SETUPS="${MPC_DATASET_SETUPS:-96}"
 MPC_MAX_STEPS="${MPC_MAX_STEPS:-500}"
 MPC_REPLAN_EVERY="${MPC_REPLAN_EVERY:-1}"
+MPC_HORIZON="${MPC_HORIZON:-60}"
+MPC_ITERS="${MPC_ITERS:-20}"
+MPC_MODEL_SUBSTEPS="${MPC_MODEL_SUBSTEPS:-4}"
+MPC_Q_POS="${MPC_Q_POS:-80.0}"
+MPC_Q_VEL="${MPC_Q_VEL:-24.0}"
+MPC_R_ACTION="${MPC_R_ACTION:-0.00005}"
+MPC_TERMINAL_SCALE="${MPC_TERMINAL_SCALE:-60.0}"
+MPC_NEAR_COLLISION_WEIGHT="${MPC_NEAR_COLLISION_WEIGHT:-100.0}"
+MPC_NEAR_COLLISION_DISTANCE="${MPC_NEAR_COLLISION_DISTANCE:-0.35}"
 
 echo "=== STAGE 1/5: Collect MPC dataset ==="
 python collect_mpc_ilqr_dataset.py \
@@ -78,15 +87,15 @@ python collect_mpc_ilqr_dataset.py \
   --w-vel-match 3.0 \
   --w-switch-match 0.20 \
   --w-phase-match 0.15 \
-  --mpc-horizon 60 \
-  --mpc-iters 20 \
-  --mpc-model-substeps 4 \
-  --mpc-q-pos 80.0 \
-  --mpc-q-vel 24.0 \
-  --mpc-r-action 0.00005 \
-  --mpc-terminal-scale 60.0 \
-  --mpc-near-collision-weight 100.0 \
-  --mpc-near-collision-distance 0.35 \
+  --mpc-horizon "$MPC_HORIZON" \
+  --mpc-iters "$MPC_ITERS" \
+  --mpc-model-substeps "$MPC_MODEL_SUBSTEPS" \
+  --mpc-q-pos "$MPC_Q_POS" \
+  --mpc-q-vel "$MPC_Q_VEL" \
+  --mpc-r-action "$MPC_R_ACTION" \
+  --mpc-terminal-scale "$MPC_TERMINAL_SCALE" \
+  --mpc-near-collision-weight "$MPC_NEAR_COLLISION_WEIGHT" \
+  --mpc-near-collision-distance "$MPC_NEAR_COLLISION_DISTANCE" \
   --pos-threshold 0.06 \
   --vel-threshold 0.09 \
   --consecutive-converged 300 \
