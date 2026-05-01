@@ -64,7 +64,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--escape-radius", type=float, default=4.0)
     p.add_argument("--init-min-pair-distance", type=float, default=0.25)
     p.add_argument("--backend", type=str, default="numpy", choices=["numpy", "amuse"])
-    p.add_argument("--fixed-init-profile", type=str, default="none", choices=["none", "weird", "near_ref", "offset_ref"])
+    p.add_argument(
+        "--fixed-init-profile",
+        type=str,
+        default="none",
+        choices=["none", "weird", "near_ref", "offset_ref", "offset_ref_far"],
+    )
     p.add_argument("--fixed-init-positions", type=str, default="")
     p.add_argument("--fixed-init-velocities", type=str, default="")
     p.add_argument("--fixed-init-pos-jitter-std", type=float, default=0.0)

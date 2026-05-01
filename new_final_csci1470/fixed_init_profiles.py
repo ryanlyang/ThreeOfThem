@@ -50,6 +50,21 @@ OFFSET_REF_FIXED_VELOCITIES_2D: tuple[tuple[float, float], tuple[float, float], 
 )
 
 
+# Same idea as offset_ref, but intentionally a bit farther from the reference
+# choreography while still avoiding immediate-collision geometry.
+OFFSET_REF_FAR_FIXED_POSITIONS_2D: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = (
+    (-0.86956791, 0.45390607),
+    (-0.20033380, -0.05177237),
+    (1.06990170, -0.40213373),
+)
+
+OFFSET_REF_FAR_FIXED_VELOCITIES_2D: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = (
+    (-0.29099955, -0.57833147),
+    (0.75313223, 0.96381656),
+    (-0.46213266, -0.38548510),
+)
+
+
 def parse_points_2d(spec: str) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
     """
     Parse 'x1,y1;x2,y2;x3,y3' into a 3x2 tuple.
@@ -114,6 +129,15 @@ def resolve_fixed_init(
     if profile == "offset_ref":
         pos = OFFSET_REF_FIXED_POSITIONS_2D
         vel = OFFSET_REF_FIXED_VELOCITIES_2D
+        if pos_spec:
+            pos = parse_points_2d(pos_spec)
+        if vel_spec:
+            vel = parse_points_2d(vel_spec)
+        return pos, vel
+
+    if profile == "offset_ref_far":
+        pos = OFFSET_REF_FAR_FIXED_POSITIONS_2D
+        vel = OFFSET_REF_FAR_FIXED_VELOCITIES_2D
         if pos_spec:
             pos = parse_points_2d(pos_spec)
         if vel_spec:

@@ -21,7 +21,12 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
     p.add_argument("--vec-env", type=str, default="subproc", choices=["sync", "subproc"])
     p.add_argument("--mp-start-method", type=str, default="spawn", choices=["spawn", "fork", "forkserver"])
-    p.add_argument("--fixed-init-profile", type=str, default="near_ref", choices=["none", "weird", "near_ref", "offset_ref"])
+    p.add_argument(
+        "--fixed-init-profile",
+        type=str,
+        default="near_ref",
+        choices=["none", "weird", "near_ref", "offset_ref", "offset_ref_far"],
+    )
     p.add_argument("--fixed-init-positions", type=str, default="")
     p.add_argument("--fixed-init-velocities", type=str, default="")
     p.add_argument("--fixed-init-pos-jitter-std", type=float, default=0.008)

@@ -25,7 +25,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-steps", type=int, default=500)
     p.add_argument("--log-every", type=int, default=20)
 
-    p.add_argument("--fixed-init-profile", type=str, default="offset_ref", choices=["none", "weird", "near_ref", "offset_ref"])
+    p.add_argument(
+        "--fixed-init-profile",
+        type=str,
+        default="offset_ref",
+        choices=["none", "weird", "near_ref", "offset_ref", "offset_ref_far"],
+    )
     p.add_argument("--fixed-init-positions", type=str, default="")
     p.add_argument("--fixed-init-velocities", type=str, default="")
 
