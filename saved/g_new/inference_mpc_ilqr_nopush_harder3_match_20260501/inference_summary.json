@@ -1,0 +1,244 @@
+{
+  "controller": "mpc_ilqr",
+  "num_setups": 3,
+  "setup_seeds": [
+    1279624202,
+    2012466538,
+    701981601
+  ],
+  "strict_criteria": {
+    "strict_mode": true,
+    "lock_to_end": true,
+    "require_no_failure": true,
+    "require_final_threshold": true,
+    "min_total_steps_for_converged": 400
+  },
+  "thresholds": {
+    "pos": 0.06,
+    "vel": 0.09
+  },
+  "consecutive_converged": 300,
+  "best_index": 1,
+  "best_seed": 2012466538,
+  "best_rank_tuple": [
+    1,
+    1,
+    501,
+    -5,
+    40.68372336176352,
+    1.1498529123309058,
+    0.03735139887289948,
+    3
+  ],
+  "best_gif": "/home/ryan/Documents/School/DeepLearning/final/saved/g_new/inference_mpc_ilqr_nopush_harder3_match_20260501/best_convergence_seed_2012466538.gif",
+  "runs": [
+    {
+      "setup_seed": 1279624202,
+      "steps": 33,
+      "collided": false,
+      "escaped": true,
+      "converged_step": null,
+      "basic_converged": false,
+      "strict_converged": false,
+      "max_converge_streak": 4,
+      "end_converge_streak": 0,
+      "sustained_after_lock": false,
+      "final_under_threshold": false,
+      "no_failure": false,
+      "enough_total_steps": false,
+      "min_pos_err": 0.03921897918115963,
+      "min_pos_step": 3,
+      "final_pos_err": 38.21043676767099,
+      "final_vel_err": 1.2875536463183241,
+      "mean_action_norm": 0.0,
+      "planning_calls": 1,
+      "planning_time_total_sec": 0.005568468011915684,
+      "planning_time_mean_sec": 0.005568468011915684,
+      "planning_iters_mean": 1.0,
+      "rank_tuple": [
+        1,
+        1,
+        501,
+        -4,
+        38.21043676767099,
+        1.2875536463183241,
+        0.03921897918115963,
+        3
+      ],
+      "gif_path": "/home/ryan/Documents/School/DeepLearning/final/saved/g_new/inference_mpc_ilqr_nopush_harder3_match_20260501/setup_00_seed_1279624202.gif"
+    },
+    {
+      "setup_seed": 2012466538,
+      "steps": 34,
+      "collided": false,
+      "escaped": true,
+      "converged_step": null,
+      "basic_converged": false,
+      "strict_converged": false,
+      "max_converge_streak": 5,
+      "end_converge_streak": 0,
+      "sustained_after_lock": false,
+      "final_under_threshold": false,
+      "no_failure": false,
+      "enough_total_steps": false,
+      "min_pos_err": 0.03735139887289948,
+      "min_pos_step": 3,
+      "final_pos_err": 40.68372336176352,
+      "final_vel_err": 1.1498529123309058,
+      "mean_action_norm": 0.0,
+      "planning_calls": 1,
+      "planning_time_total_sec": 0.006335701997159049,
+      "planning_time_mean_sec": 0.006335701997159049,
+      "planning_iters_mean": 1.0,
+      "rank_tuple": [
+        1,
+        1,
+        501,
+        -5,
+        40.68372336176352,
+        1.1498529123309058,
+        0.03735139887289948,
+        3
+      ],
+      "gif_path": "/home/ryan/Documents/School/DeepLearning/final/saved/g_new/inference_mpc_ilqr_nopush_harder3_match_20260501/setup_01_seed_2012466538.gif"
+    },
+    {
+      "setup_seed": 701981601,
+      "steps": 24,
+      "collided": true,
+      "escaped": false,
+      "converged_step": null,
+      "basic_converged": false,
+      "strict_converged": false,
+      "max_converge_streak": 4,
+      "end_converge_streak": 0,
+      "sustained_after_lock": false,
+      "final_under_threshold": false,
+      "no_failure": false,
+      "enough_total_steps": false,
+      "min_pos_err": 0.03816720369991472,
+      "min_pos_step": 4,
+      "final_pos_err": 0.5724203551871357,
+      "final_vel_err": 0.06326825105753724,
+      "mean_action_norm": 0.0,
+      "planning_calls": 1,
+      "planning_time_total_sec": 0.005592032975982875,
+      "planning_time_mean_sec": 0.005592032975982875,
+      "planning_iters_mean": 1.0,
+      "rank_tuple": [
+        1,
+        1,
+        501,
+        -4,
+        0.5724203551871357,
+        0.06326825105753724,
+        0.03816720369991472,
+        4
+      ],
+      "gif_path": "/home/ryan/Documents/School/DeepLearning/final/saved/g_new/inference_mpc_ilqr_nopush_harder3_match_20260501/setup_02_seed_701981601.gif"
+    }
+  ],
+  "env_config": {
+    "num_bodies": 3,
+    "dimensions": 2,
+    "gravitational_constant": 1.0,
+    "mass_each": 1.0,
+    "action_dt": 0.05,
+    "integrator_dt": 0.001,
+    "horizon_steps": 500,
+    "max_action_norm": 0.0,
+    "collision_radius": 0.06,
+    "near_collision_distance": 0.35,
+    "escape_radius": 8.0,
+    "init_radius_min": 0.15,
+    "init_radius_max": 1.3,
+    "init_speed_scale": 0.35,
+    "init_min_pair_distance": 0.25,
+    "init_sample_tries": 256,
+    "fixed_init_positions": [
+      [
+        -0.86956791,
+        0.45390607
+      ],
+      [
+        -0.2003338,
+        -0.05177237
+      ],
+      [
+        1.0699017,
+        -0.40213373
+      ]
+    ],
+    "fixed_init_velocities": [
+      [
+        -0.29099955,
+        -0.57833147
+      ],
+      [
+        0.75313223,
+        0.96381656
+      ],
+      [
+        -0.46213266,
+        -0.3854851
+      ]
+    ],
+    "fixed_init_pos_jitter_std": 0.008,
+    "fixed_init_vel_jitter_std": 0.005,
+    "fixed_init_jitter_tries": 64,
+    "reference_period": 6.32591398,
+    "reference_samples": 900,
+    "phase_offsets_fraction": [
+      0.0,
+      0.3333333333333333,
+      0.6666666666666666
+    ],
+    "phase_search_radius": 35,
+    "expected_phase_stride_override": null,
+    "backend": "numpy",
+    "integrator_name": "Hermite",
+    "seed": 4301
+  },
+  "match_weights": {
+    "position": 5.0,
+    "velocity_direction": 3.0,
+    "fuel": 0.0,
+    "near_collision": 0.0,
+    "collision": 0.0,
+    "escape": 0.0,
+    "permutation_switch": 0.2,
+    "phase_jump": 0.15,
+    "out_of_plane": 0.0
+  },
+  "ilqr_config": {
+    "horizon": 1,
+    "iterations": 1,
+    "model_substeps": 1,
+    "fd_eps_state": 0.0001,
+    "fd_eps_action": 0.001,
+    "reg_init": 0.001,
+    "reg_min": 1e-06,
+    "reg_max": 100000.0,
+    "improvement_tol": 1e-05,
+    "q_pos": 80.0,
+    "q_vel": 24.0,
+    "r_action": 5e-05,
+    "terminal_scale": 60.0,
+    "near_collision_weight": 100.0,
+    "near_collision_distance": 0.35,
+    "line_search_alphas": [
+      1.0,
+      0.5,
+      0.25,
+      0.1,
+      0.05
+    ],
+    "cem_iters": 10,
+    "cem_population": 128,
+    "cem_elite_frac": 0.12,
+    "cem_init_std_frac": 0.45,
+    "cem_min_std_frac": 0.04,
+    "cem_smoothing": 0.25,
+    "cem_seed": 7
+  }
+}

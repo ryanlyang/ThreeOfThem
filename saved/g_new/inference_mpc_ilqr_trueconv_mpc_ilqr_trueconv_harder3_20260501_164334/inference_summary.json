@@ -1,0 +1,244 @@
+{
+  "controller": "mpc_ilqr",
+  "num_setups": 3,
+  "setup_seeds": [
+    1279624202,
+    2012466538,
+    701981601
+  ],
+  "strict_criteria": {
+    "strict_mode": true,
+    "lock_to_end": true,
+    "require_no_failure": true,
+    "require_final_threshold": true,
+    "min_total_steps_for_converged": 400
+  },
+  "thresholds": {
+    "pos": 0.06,
+    "vel": 0.09
+  },
+  "consecutive_converged": 300,
+  "best_index": 1,
+  "best_seed": 2012466538,
+  "best_rank_tuple": [
+    0,
+    0,
+    1,
+    -500,
+    1.2454566187941718e-05,
+    4.7559252164264265e-06,
+    1.1382056661378889e-05,
+    109
+  ],
+  "best_gif": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/inference_mpc_ilqr_trueconv_mpc_ilqr_trueconv_harder3_20260501_164334/best_convergence_seed_2012466538.gif",
+  "runs": [
+    {
+      "setup_seed": 1279624202,
+      "steps": 500,
+      "collided": false,
+      "escaped": false,
+      "converged_step": 1,
+      "basic_converged": true,
+      "strict_converged": true,
+      "max_converge_streak": 500,
+      "end_converge_streak": 500,
+      "sustained_after_lock": true,
+      "final_under_threshold": true,
+      "no_failure": true,
+      "enough_total_steps": true,
+      "min_pos_err": 1.138282719236651e-05,
+      "min_pos_step": 109,
+      "final_pos_err": 1.2454566188118245e-05,
+      "final_vel_err": 4.755925215686278e-06,
+      "mean_action_norm": 0.050460443195798704,
+      "planning_calls": 250,
+      "planning_time_total_sec": 418.5202202199507,
+      "planning_time_mean_sec": 1.674080880879803,
+      "planning_iters_mean": 2.16,
+      "rank_tuple": [
+        0,
+        0,
+        1,
+        -500,
+        1.2454566188118245e-05,
+        4.755925215686278e-06,
+        1.138282719236651e-05,
+        109
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/inference_mpc_ilqr_trueconv_mpc_ilqr_trueconv_harder3_20260501_164334/setup_00_seed_1279624202.gif"
+    },
+    {
+      "setup_seed": 2012466538,
+      "steps": 500,
+      "collided": false,
+      "escaped": false,
+      "converged_step": 1,
+      "basic_converged": true,
+      "strict_converged": true,
+      "max_converge_streak": 500,
+      "end_converge_streak": 500,
+      "sustained_after_lock": true,
+      "final_under_threshold": true,
+      "no_failure": true,
+      "enough_total_steps": true,
+      "min_pos_err": 1.1382056661378889e-05,
+      "min_pos_step": 109,
+      "final_pos_err": 1.2454566187941718e-05,
+      "final_vel_err": 4.7559252164264265e-06,
+      "mean_action_norm": 0.049115121301415536,
+      "planning_calls": 250,
+      "planning_time_total_sec": 407.68949297599465,
+      "planning_time_mean_sec": 1.6307579719039786,
+      "planning_iters_mean": 2.116,
+      "rank_tuple": [
+        0,
+        0,
+        1,
+        -500,
+        1.2454566187941718e-05,
+        4.7559252164264265e-06,
+        1.1382056661378889e-05,
+        109
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/inference_mpc_ilqr_trueconv_mpc_ilqr_trueconv_harder3_20260501_164334/setup_01_seed_2012466538.gif"
+    },
+    {
+      "setup_seed": 701981601,
+      "steps": 500,
+      "collided": false,
+      "escaped": false,
+      "converged_step": 1,
+      "basic_converged": true,
+      "strict_converged": true,
+      "max_converge_streak": 500,
+      "end_converge_streak": 500,
+      "sustained_after_lock": true,
+      "final_under_threshold": true,
+      "no_failure": true,
+      "enough_total_steps": true,
+      "min_pos_err": 1.138366750701138e-05,
+      "min_pos_step": 109,
+      "final_pos_err": 1.2454566188055309e-05,
+      "final_vel_err": 4.755925217055553e-06,
+      "mean_action_norm": 0.050045081232951136,
+      "planning_calls": 250,
+      "planning_time_total_sec": 445.49338549801905,
+      "planning_time_mean_sec": 1.7819735419920761,
+      "planning_iters_mean": 2.244,
+      "rank_tuple": [
+        0,
+        0,
+        1,
+        -500,
+        1.2454566188055309e-05,
+        4.755925217055553e-06,
+        1.138366750701138e-05,
+        109
+      ],
+      "gif_path": "/home/ryreu/guided_cnn/csci1470/ThreeOfThem/new_final_csci1470/inference_mpc_ilqr_trueconv_mpc_ilqr_trueconv_harder3_20260501_164334/setup_02_seed_701981601.gif"
+    }
+  ],
+  "env_config": {
+    "num_bodies": 3,
+    "dimensions": 2,
+    "gravitational_constant": 1.0,
+    "mass_each": 1.0,
+    "action_dt": 0.05,
+    "integrator_dt": 0.001,
+    "horizon_steps": 500,
+    "max_action_norm": 2.5,
+    "collision_radius": 0.06,
+    "near_collision_distance": 0.35,
+    "escape_radius": 8.0,
+    "init_radius_min": 0.15,
+    "init_radius_max": 1.3,
+    "init_speed_scale": 0.35,
+    "init_min_pair_distance": 0.25,
+    "init_sample_tries": 256,
+    "fixed_init_positions": [
+      [
+        -0.86956791,
+        0.45390607
+      ],
+      [
+        -0.2003338,
+        -0.05177237
+      ],
+      [
+        1.0699017,
+        -0.40213373
+      ]
+    ],
+    "fixed_init_velocities": [
+      [
+        -0.29099955,
+        -0.57833147
+      ],
+      [
+        0.75313223,
+        0.96381656
+      ],
+      [
+        -0.46213266,
+        -0.3854851
+      ]
+    ],
+    "fixed_init_pos_jitter_std": 0.008,
+    "fixed_init_vel_jitter_std": 0.005,
+    "fixed_init_jitter_tries": 64,
+    "reference_period": 6.32591398,
+    "reference_samples": 900,
+    "phase_offsets_fraction": [
+      0.0,
+      0.3333333333333333,
+      0.6666666666666666
+    ],
+    "phase_search_radius": 35,
+    "expected_phase_stride_override": null,
+    "backend": "numpy",
+    "integrator_name": "Hermite",
+    "seed": 4301
+  },
+  "match_weights": {
+    "position": 5.0,
+    "velocity_direction": 3.0,
+    "fuel": 0.0,
+    "near_collision": 0.0,
+    "collision": 0.0,
+    "escape": 0.0,
+    "permutation_switch": 0.2,
+    "phase_jump": 0.15,
+    "out_of_plane": 0.0
+  },
+  "ilqr_config": {
+    "horizon": 42,
+    "iterations": 14,
+    "model_substeps": 3,
+    "fd_eps_state": 0.0001,
+    "fd_eps_action": 0.001,
+    "reg_init": 0.001,
+    "reg_min": 1e-06,
+    "reg_max": 100000.0,
+    "improvement_tol": 1e-05,
+    "q_pos": 80.0,
+    "q_vel": 24.0,
+    "r_action": 5e-05,
+    "terminal_scale": 60.0,
+    "near_collision_weight": 100.0,
+    "near_collision_distance": 0.35,
+    "line_search_alphas": [
+      1.0,
+      0.5,
+      0.25,
+      0.1,
+      0.05
+    ],
+    "cem_iters": 10,
+    "cem_population": 128,
+    "cem_elite_frac": 0.12,
+    "cem_init_std_frac": 0.45,
+    "cem_min_std_frac": 0.04,
+    "cem_smoothing": 0.25,
+    "cem_seed": 7
+  }
+}
